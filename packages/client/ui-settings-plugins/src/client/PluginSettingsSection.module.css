@@ -1,0 +1,228 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 720px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.notice,
+.fieldHint,
+.applies,
+.saved,
+.error,
+.fieldError {
+  margin: 0;
+  font-size: 12px;
+}
+
+.fieldHint,
+.applies {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.notice {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+.error {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.saved {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-3);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.applies {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+}
+
+.groupTitle {
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.groupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fieldLabel,
+.checkboxLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.required {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.resetButton {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--dsw-alias-label-tertiary);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.resetButton:hover:not(:disabled) {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.input,
+.jsonInput,
+.readonlyValue {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 7px;
+  padding: 7px 9px;
+  background: var(--dsw-alias-bg-layer-2);
+  color: inherit;
+  font: inherit;
+}
+
+.jsonInput {
+  resize: vertical;
+  font-family: var(--dsw-font-family-mono, monospace);
+  font-size: 12px;
+}
+
+.readonlyValue {
+  display: block;
+  min-height: 18px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 999px;
+  padding: 7px 16px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: none;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--dsw-alias-button-primary-hover);
+}
+
+.secondaryButton {
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-3);
+  color: inherit;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.resetButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.refreshFailure {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--dsw-alias-state-error-primary);
+  border-radius: 8px;
+}
+
+.refreshFailure .error {
+  flex: 1;
+}
+
+/* Whole-row reset chrome. */
+
+.removeButton {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--dsw-alias-state-error-primary);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.removeButton:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+}
+
+.removeButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

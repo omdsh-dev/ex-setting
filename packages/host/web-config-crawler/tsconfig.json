@@ -1,0 +1,30 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../../vendor/loader"
+    },
+    {
+      "path": "../../util/paths"
+    },
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../settings/settings"
+    },
+    {
+      "path": "../../support/invariants"
+    }
+  ]
+}
