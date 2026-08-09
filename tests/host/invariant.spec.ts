@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { Context } from 'cordis'
 import z from 'schemastery'
 import InvariantService from '@deepseek-ai/dsh-invariants'
-import * as CrawlerInvariant from '../src/invariant.ts'
+import * as CrawlerInvariant from '../../src/invariant.ts'
 import { Settings, settingsNamespace, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
 
 class MemorySettings extends Settings {

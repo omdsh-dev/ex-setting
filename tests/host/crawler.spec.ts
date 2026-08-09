@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { Context } from 'cordis'
 import z from 'schemastery'
 import { Settings, settingsNamespace, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
-import { apply, inject } from '../src/index.ts'
+import { apply, inject } from '../../src/index.ts'
 
 class MemorySettings extends Settings {
   readonly writable = true

@@ -7,7 +7,7 @@
  * overlay. Mounting it is the deployment's explicit decision to expose all
  * user-adjustable plugin settings over the loopback-only configuration plane;
  * a composition without it keeps the gateway's default allowlist stance.
- * @module @deepseek-ai/dsh-host-web-config-crawler
+ * @module @deepseek-ai/dsh-ex-setting
  */
 
 import { readFile, rm, writeFile } from 'node:fs/promises'

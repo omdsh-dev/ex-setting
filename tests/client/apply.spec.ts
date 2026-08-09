@@ -5,8 +5,8 @@ import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 import { SlotsService } from '@deepseek-ai/dsh-client-runtime/client'
 import { LocaleService } from '@deepseek-ai/dsh-client-locale/client'
 import { usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
-import { apply, inject } from '@deepseek-ai/dsh-client-ui-settings-plugins/client'
-import type { PluginSettingsSectionInjected } from '../src/client/PluginSettingsSection.tsx'
+import { apply, inject } from '@deepseek-ai/dsh-ex-setting/client'
+import type { PluginSettingsSectionInjected } from '../../src/client/PluginSettingsSection.tsx'
 
 usePinnedBrowserLanguages('zh-CN')
 

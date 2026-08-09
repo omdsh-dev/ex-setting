@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { SettingsNamespaceView } from '@deepseek-ai/dsh-client-connection/client'
 import {
   PluginSettingsStore, pluginSettingsEntries, pluginSettingsEntry, settingsMessage,
-} from '../src/client/plugin-settings-store.ts'
+} from '../../src/client/plugin-settings-store.ts'
 
 function exposed(ns: string): SettingsNamespaceView {
   return {

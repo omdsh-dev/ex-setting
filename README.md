@@ -1,101 +1,63 @@
-# dsh Web 配置插件
+# `@deepseek-ai/dsh-ex-setting`
 
-这是从最新 DeepSeek Harness `feat-web-config` worktree 中重新分离出的独立发布目录。
+English | [中文](README.zh.md)
 
-当前上游提交：`a9c30fa4 fix(web-config): use declaration-aware slot injection`。
+The automatic DSH Web settings bundle. It combines the host-side configuration crawler with its browser settings navigation in one external package: the host enumerates registered settings namespaces and schema-bearing composition rows, while the client projects them into first-level settings sections and editors.
 
-宿主补丁基线：当前 `origin/master` `50b34ea0`。
-
-## 包含内容
+## Repository shape
 
 ```text
-packages/host/web-config-crawler/       Host 配置爬取插件
-packages/client/ui-settings-plugins/    Web 配置导航和编辑器插件
-patches/web-config-plugin.patch         DSH 宿主接缝补丁
+package.json              # host/client package and dsh.bundle/dshClient manifests
+cordis.patch.yml          # profile layer that mounts the crawler
+src/index.ts              # host crawler plugin
+src/client/               # browser settings page
+src/invariant.ts          # crawler invariant companion
+lib/                      # generated host/client artifacts
+legacy/                   # source-compatible host integration patch for older DSH snapshots
+docs/                     # detailed host and client protocol references
+tests/host/                # crawler and composition tests
+tests/client/              # browser store and section tests
 ```
 
-两个插件分别是：
+The two runtime faces share one package identity so Git/profile installation has one root artifact. The browser face is exported as `@deepseek-ai/dsh-ex-setting/client` and is selected by the package's `dshClient` manifest.
+
+## Bundle behavior
+
+Installing the bundle adds the `web-config-crawler` row. That is the deployment-level decision to expose all registered settings namespaces and schema-carrying composition rows through the Web configuration plane. A profile can disable it:
+
+```yaml
+- id: web-config-crawler
+  disabled: true
+```
+
+The crawler redacts secrets, applies path-addressed edits with schema resolution, persists complete rows into the personal overlay, and removes rows to restore lower bundle layers. The browser page keeps settings namespaces and composition rows source-distinct and renders schema fields, secret controls, reset, revision conflicts, restart notices, and live invalidation refreshes.
+
+The bundle patch only composes this package. The settings/composition wire protocol, API proxy handlers, slot host, and browser shell must be supplied by the DSH version selected by the profile. The old host integration diff is retained in `legacy/` for older DSH snapshots and is not part of the new bundle contract.
+
+## Development
+
+A full typecheck expects sibling checkouts:
 
 ```text
-@deepseek-ai/dsh-host-web-config-crawler
-@deepseek-ai/dsh-client-ui-settings-plugins
+~/git/deepseek-harness
+~/git/ex-setting
 ```
-
-## 当前功能
-
-### Host crawler
-
-挂载后，host settings wire 会自动枚举并服务所有注册的 settings namespace，同时枚举带有 schemastery `Config.toJSON()` schema 的 composition rows。secret 字段始终 redacted，配置写入使用 revision 检查，并持久化到个人 `$DSH_HOME/config.yaml` overlay。
-
-不具备 schemastery `toJSON()` 的原生 Zod composition Config 会保留为 file-only，不会被通用 Web 编辑器渲染。
-
-### Web settings page
-
-Settings 页面现在使用独立的一级导航显示每个来源：
-
-- settings namespace 使用来源前缀标识
-- composition row 使用 composition id 标识
-- label 冲突时回退到 composition id 或 `Config` 后缀
-- 选择导航项后只在详情列打开对应编辑器
-- 不再渲染聚合的 Plugins 页面
-
-编辑器根据 schema 渲染字段，支持 secret、reset、revision conflict、restart notice 和 composition overlay 写入。插件作者不需要增加 `web.expose` opt-in。
-
-挂载 crawler 是部署层面的显式决定：它会通过 loopback-only 配置面暴露所有注册的可配置插件设置。没有挂载 crawler 时，host gateway 保持默认 allowlist 行为。
-
-完整协议和限制说明见两个包的 README：
-
-- `packages/host/web-config-crawler/README.md`
-- `packages/host/web-config-crawler/README.zh.md`
-- `packages/client/ui-settings-plugins/README.md`
-- `packages/client/ui-settings-plugins/README.zh.md`
-
-## 安装到 DSH
-
-以下命令在目标 DSH 仓库根目录执行。补丁基于 `origin/master` `50b34ea0`；其他基线需要先确认补丁可以安全应用。
-
-### 1. 复制两个插件包
-
-```sh
-cp -a /path/to/web-config-plugin/packages/host/web-config-crawler \
-  packages/host/
-cp -a /path/to/web-config-plugin/packages/client/ui-settings-plugins \
-  packages/client/
-```
-
-### 2. 应用宿主补丁
-
-```sh
-git apply --check /path/to/web-config-plugin/patches/web-config-plugin.patch
-git apply /path/to/web-config-plugin/patches/web-config-plugin.patch
-```
-
-补丁包含：
-
-- `settings.*` 和 `composition.*` wire 接口接线
-- connection client API 与 fixtures
-- API proxy schema、handler、拒绝码映射和测试
-- Settings 一级导航 shell 的样式和文档接缝
-- `tsconfig` references 与 path aliases
-- `apps/cli` 依赖和 Web composition rows
-- Web 配置 e2e 测试、snapshots 和 host README
-
-补丁不包含两个插件包本体，也不修改仓库根 `package.json` 的开发工具依赖或 `pnpm-lock.yaml`；复制插件后由目标 workspace 重新生成 lockfile。
-
-### 3. 安装并构建
 
 ```sh
 pnpm install
-pnpm exec tsc -b packages/host/web-config-crawler
-pnpm --filter @deepseek-ai/dsh-client-ui-settings-plugins bundle
+pnpm run typecheck
+pnpm test
+pnpm run build
 ```
 
-补丁默认把两个插件加入 `apps/cli/config/web.cordis.yml`。如果某个部署不希望开启自动配置爬取，可以移除 `web-config-crawler` row；此时 gateway 会恢复默认 allowlist。
+The `prepare` script builds both host and browser entries directly from `src/`, so Git installation does not require sibling project references. pnpm 10 may require the profile to allow the package's prepare script; only approve a pinned, trusted checkout.
 
-## 发布到 GitHub
+## Model Experience
 
-本插件仓库已发布到：
+This bundle adds no model-visible prompt text or tools. It exposes configuration only through the loopback Web settings surface; the owning DSH settings, composition, session, and permission services retain logging, redaction, and authorization semantics.
 
-<https://github.com/dsh-external/ex-setting>
+## Known Limitations and Deferred Work
 
-两个 package 均沿用 BSD-3-Clause 许可。发布到组织仓库时，请按组织要求补充仓库级 LICENSE 和版权信息。
+- Native Zod composition Config schemas remain file-configurable but are not rendered by the generic editor, which requires schemastery `toJSON()`.
+- The crawler is intentionally broad; deployments that do not want automatic composition editing should disable the row and keep the gateway allowlist posture.
+- Older DSH snapshots require the host integration patch in `legacy/` because a bundle cannot add missing wire or API source seams; the current `master` also predates the `composition` client face, so full typecheck requires the compatible web-config host change (for example `a9c30fa4`).

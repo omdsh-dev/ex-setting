@@ -1,12 +1,12 @@
 /**
- * Package-owned invariant companion for `@deepseek-ai/dsh-host-web-config-crawler`.
- * @module @deepseek-ai/dsh-host-web-config-crawler/invariant
+ * Package-owned invariant companion for `@deepseek-ai/dsh-ex-setting`.
+ * @module @deepseek-ai/dsh-ex-setting/invariant
  */
 
 import type { Context } from 'cordis'
 import type { InvariantInstaller } from '@deepseek-ai/dsh-invariants'
 
-const PACKAGE_NAME = '@deepseek-ai/dsh-host-web-config-crawler'
+const PACKAGE_NAME = '@deepseek-ai/dsh-ex-setting'
 
 /** Cordis companion plugin name. */
 export const name = 'web-config-crawler-invariant'

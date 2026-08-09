@@ -7,13 +7,13 @@ import type {
 } from '@deepseek-ai/dsh-client-connection/client'
 import {
   PluginSettingsSection, PluginSettingsStatusSection, createPluginSettingsSection, userOpsFor,
-} from '../src/client/PluginSettingsSection.tsx'
+} from '../../src/client/PluginSettingsSection.tsx'
 import type {
   PluginSettingsSectionCommonProps, PluginSettingsSectionProps,
-} from '../src/client/PluginSettingsSection.tsx'
-import { PluginSettingsStore } from '../src/client/plugin-settings-store.ts'
-import type { PluginSettingsState } from '../src/client/plugin-settings-store.ts'
-import { en } from '../src/client/locales.ts'
+} from '../../src/client/PluginSettingsSection.tsx'
+import { PluginSettingsStore } from '../../src/client/plugin-settings-store.ts'
+import type { PluginSettingsState } from '../../src/client/plugin-settings-store.ts'
+import { en } from '../../src/client/locales.ts'
 
 afterEach(cleanup)
 

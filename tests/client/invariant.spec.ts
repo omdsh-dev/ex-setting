@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { Context } from 'cordis'
 import InvariantService from '@deepseek-ai/dsh-invariants'
-import * as PluginSettingsInvariant from '../src/invariant.ts'
+import * as PluginSettingsInvariant from '../../src/invariant.ts'
 
 describe('ui-settings-plugins invariants', () => {
   it('registers its companion without a runtime check', async () => {
@@ -11,9 +11,11 @@ describe('ui-settings-plugins invariants', () => {
     await expect(ctx.plugin(PluginSettingsInvariant)).resolves.toBeDefined()
   })
 
-  it('node-half apply is a no-op host placeholder', async () => {
-    const { apply } = await import('@deepseek-ai/dsh-client-ui-settings-plugins')
-    apply()
-    expect(true).toBe(true) // reaching here without throw is the contract
+  it('host apply provides the crawler service', async () => {
+    const { apply } = await import('../../src/index.ts')
+    const ctx = new Context()
+    apply(ctx, { overlayPath: '/tmp/dsh-ex-setting-test-config.yaml' })
+    expect(ctx.get('webConfigCrawler')).toBeDefined()
+    await ctx.fiber.dispose()
   })
 })

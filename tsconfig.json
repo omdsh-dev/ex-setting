@@ -1,0 +1,29 @@
+{
+  "extends": "../deepseek-harness/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "paths": {
+      "@deepseek-ai/dsh-ex-setting": ["src/index.ts"],
+      "@deepseek-ai/dsh-ex-setting/*": ["src/*"],
+      "@deepseek-ai/dsh-client-connection/client": ["../deepseek-harness/packages/client/connection/src/client/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../deepseek-harness/vendor/cordis" },
+    { "path": "../deepseek-harness/packages/support/invariants" },
+    { "path": "../deepseek-harness/packages/util/paths" },
+    { "path": "../deepseek-harness/packages/settings/settings" },
+    { "path": "../deepseek-harness/packages/client/connection" },
+    { "path": "../deepseek-harness/packages/client/locale" },
+    { "path": "../deepseek-harness/packages/client/runtime" },
+    { "path": "../deepseek-harness/packages/client/schema-form" },
+    { "path": "../deepseek-harness/packages/client/ui-settings" },
+    { "path": "../deepseek-harness/packages/client/ui-slots" }
+  ]
+}

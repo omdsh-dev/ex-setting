@@ -17,7 +17,7 @@ import z from 'schemastery'
 import { z as zod } from 'zod'
 import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 import SettingsLocal from '@deepseek-ai/dsh-settings-local'
-import * as Crawler from '../src/index.ts'
+import * as Crawler from '../../src/index.ts'
 
 let root: string | undefined
 let context: Context | undefined
@@ -65,7 +65,7 @@ describe('web-config-crawler real composition', () => {
       `    path: ${JSON.stringify(settingsPath)}`,
       '    debounceMs: 10',
       '- id: crawler',
-      "  name: '@deepseek-ai/dsh-host-web-config-crawler'",
+      "  name: '@deepseek-ai/dsh-ex-setting'",
       '- id: consumer',
       '  name: test-crawler-consumer',
       '- id: native-consumer',
@@ -81,7 +81,7 @@ describe('web-config-crawler real composition', () => {
     ctx.loader.builtins.include = Include
     const modules = new Map<string, unknown>([
       ['@deepseek-ai/dsh-settings-local', SettingsLocal],
-      ['@deepseek-ai/dsh-host-web-config-crawler', Crawler],
+      ['@deepseek-ai/dsh-ex-setting', Crawler],
       ['test-crawler-consumer', consumer],
       ['test-native-consumer', nativeConsumer],
     ])
@@ -137,7 +137,7 @@ describe('web-config-crawler real composition', () => {
       `    path: ${JSON.stringify(settingsPath)}`,
       '    debounceMs: 10',
       '- id: crawler',
-      "  name: '@deepseek-ai/dsh-host-web-config-crawler'",
+      "  name: '@deepseek-ai/dsh-ex-setting'",
       '  config:',
       `    overlayPath: ${JSON.stringify(overlayPath)}`,
       '- id: consumer',
@@ -152,7 +152,7 @@ describe('web-config-crawler real composition', () => {
     ctx.loader.builtins.include = Include
     const modules = new Map<string, unknown>([
       ['@deepseek-ai/dsh-settings-local', SettingsLocal],
-      ['@deepseek-ai/dsh-host-web-config-crawler', Crawler],
+      ['@deepseek-ai/dsh-ex-setting', Crawler],
       ['test-crawler-consumer', consumer],
     ])
     ctx.loader.internal = {
@@ -223,7 +223,7 @@ describe('web-config-crawler real composition', () => {
       `    path: ${JSON.stringify(settingsPath)}`,
       '    debounceMs: 10',
       '- id: crawler',
-      "  name: '@deepseek-ai/dsh-host-web-config-crawler'",
+      "  name: '@deepseek-ai/dsh-ex-setting'",
       '  config:',
       `    overlayPath: ${JSON.stringify(overlayPath)}`,
       '- id: consumer',
@@ -238,7 +238,7 @@ describe('web-config-crawler real composition', () => {
     ctx.loader.builtins.include = Include
     const modules = new Map<string, unknown>([
       ['@deepseek-ai/dsh-settings-local', SettingsLocal],
-      ['@deepseek-ai/dsh-host-web-config-crawler', Crawler],
+      ['@deepseek-ai/dsh-ex-setting', Crawler],
       ['test-crawler-consumer', consumer],
     ])
     ctx.loader.internal = {
