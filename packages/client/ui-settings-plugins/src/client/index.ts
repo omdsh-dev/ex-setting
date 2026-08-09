@@ -5,7 +5,6 @@
  * Export discipline: packages/client/AGENTS.md.
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
-import { deferRegistration, type DeferredRegistration } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
 // Type-only: pulls the shell's settings.section SlotMap merge.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
@@ -65,7 +64,7 @@ type DesiredSection =
 
 type LiveSection = {
   signature: string
-  deferred: DeferredRegistration
+  dispose: () => void
 }
 
 /** Project the catalog snapshot into dynamic settings.section registrations. */
@@ -131,7 +130,7 @@ export async function apply(ctx: ClientContext): Promise<void> {
       const next = new Map(desired.map(section => [section.id, section]))
       for (const [id, current] of live) {
         if (next.get(id)?.signature === current.signature) continue
-        current.deferred.dispose()
+        current.dispose()
         live.delete(id)
       }
       for (const section of desired) {
@@ -142,23 +141,22 @@ export async function apply(ctx: ClientContext): Promise<void> {
         const label = section.kind === 'plugin'
           ? section.label
           : () => t(section.labelKey)
-        const deferred = deferRegistration(ctx.slots, 'settings.section', component, () =>
-          ctx.slots.register({
-            name: 'settings.section',
-            id: section.id,
-            order: PLUGIN_ORDER,
-            label,
-            locale: NS,
-            inject: injected,
-          }, component))
-        live.set(section.id, { signature: section.signature, deferred })
+        const dispose = ctx.slots.inject('settings.section', () => ctx.slots.register({
+          name: 'settings.section',
+          id: section.id,
+          order: PLUGIN_ORDER,
+          label,
+          locale: NS,
+          inject: injected,
+        }, component))
+        live.set(section.id, { signature: section.signature, dispose })
       }
     }
     const unsubscribe = controller.store.subscribe(reconcile)
     reconcile()
     return () => {
       unsubscribe()
-      for (const section of live.values()) section.deferred.dispose()
+      for (const section of live.values()) section.dispose()
       live.clear()
     }
   }, 'ui-settings-plugins: dynamic settings sections')

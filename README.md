@@ -2,9 +2,9 @@
 
 这是从最新 DeepSeek Harness `feat-web-config` worktree 中重新分离出的独立发布目录。
 
-当前上游提交：`5b9b8726 feat(web): expose crawled plugin settings in navigation`。
+当前上游提交：`a9c30fa4 fix(web-config): use declaration-aware slot injection`。
 
-宿主补丁基线：官方 0804 snapshot 对应的 DSH `master` `b4b67f0`。
+宿主补丁基线：当前 `origin/master` `50b34ea0`。
 
 ## 包含内容
 
@@ -52,7 +52,7 @@ Settings 页面现在使用独立的一级导航显示每个来源：
 
 ## 安装到 DSH
 
-以下命令在目标 DSH 仓库根目录执行。补丁基于 `master` `b4b67f0`；其他基线需要先确认补丁可以安全应用。
+以下命令在目标 DSH 仓库根目录执行。补丁基于 `origin/master` `50b34ea0`；其他基线需要先确认补丁可以安全应用。
 
 ### 1. 复制两个插件包
 
@@ -94,17 +94,8 @@ pnpm --filter @deepseek-ai/dsh-client-ui-settings-plugins bundle
 
 ## 发布到 GitHub
 
-本目录目前只完成本地整理，没有配置远程仓库，也没有推送。
+本插件仓库已发布到：
 
-在 GitHub 创建目标仓库后执行：
-
-```sh
-cd /home/raum/deepseek-harness/web-config-plugin
-git add .
-git commit -m 'feat: refresh web-config plugins'
-git branch -M main
-git remote add origin <GitHub 仓库 URL>
-git push -u origin main
-```
+<https://github.com/dsh-external/ex-setting>
 
 两个 package 均沿用 BSD-3-Clause 许可。发布到组织仓库时，请按组织要求补充仓库级 LICENSE 和版权信息。

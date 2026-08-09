@@ -690,8 +690,8 @@ export function PluginSettingsSection(props: PluginSettingsSectionProps): ReactN
 
 /**
  * Create a component identity dedicated to one dynamic navigation entry.
- * `deferRegistration` uses component identity as its HMR presence probe, so
- * catalog entries must not share the generic editor function itself.
+ * Each catalog entry owns a separate slot registration so its source key stays
+ * stable across catalog reconciliation and declaration lifetimes.
  * @param pluginKey - stable source key closed over by the component.
  * @returns a slot component bound to that key.
  */

@@ -1,51 +1,8 @@
-diff --git a/apps/cli/config/web.cordis.yml b/apps/cli/config/web.cordis.yml
-index daf597916ebe721303cdbf98b73b87bef24463a9..3a59eaabd6a2dc66d9e79f053ac6b3ad0ba54f9b 100644
---- a/apps/cli/config/web.cordis.yml
-+++ b/apps/cli/config/web.cordis.yml
-@@ -135,6 +135,18 @@
-     - id: ui-settings-general
-       name: '@deepseek-ai/dsh-client-ui-settings-general'
- 
-+    # Automatic plugin configuration: served settings namespaces and schema-
-+    # carrying composition rows become source-distinct first-level Settings
-+    # navigation. The crawler needs no per-plugin opt-in.
-+    - id: ui-settings-plugins
-+      name: '@deepseek-ai/dsh-client-ui-settings-plugins'
-+
-+    # The deployment-level opt-in that turns the settings wire into a full
-+    # enumeration: every registered settings namespace becomes readable and
-+    # writable through the loopback-only configuration plane.
-+    - id: web-config-crawler
-+      name: '@deepseek-ai/dsh-host-web-config-crawler'
-+
-     - id: ui-models
-       name: '@deepseek-ai/dsh-client-ui-models'
- 
-diff --git a/apps/cli/package.json b/apps/cli/package.json
-index 0ccf4b219760f9f5d0b6e7fce7e8be50a6c37ec8..f7a71d2b644cce84c5212662d408a4f30de28e9c 100644
---- a/apps/cli/package.json
-+++ b/apps/cli/package.json
-@@ -39,6 +39,7 @@
-     "@deepseek-ai/dsh-client-ui-question": "workspace:^",
-     "@deepseek-ai/dsh-client-ui-settings": "workspace:^",
-     "@deepseek-ai/dsh-client-ui-settings-general": "workspace:^",
-+    "@deepseek-ai/dsh-client-ui-settings-plugins": "workspace:^",
-     "@deepseek-ai/dsh-client-ui-sidebar": "workspace:^",
-     "@deepseek-ai/dsh-client-ui-skill": "workspace:^",
-     "@deepseek-ai/dsh-client-ui-slash": "workspace:^",
-@@ -63,6 +64,7 @@
-     "@deepseek-ai/dsh-host-directory-picker-auto": "workspace:^",
-     "@deepseek-ai/dsh-host-directory-picker-browse": "workspace:^",
-     "@deepseek-ai/dsh-host-directory-picker-native": "workspace:^",
-+    "@deepseek-ai/dsh-host-web-config-crawler": "workspace:^",
-     "@deepseek-ai/dsh-host-webserver": "workspace:^",
-     "@deepseek-ai/dsh-llm": "workspace:^",
-     "@deepseek-ai/dsh-llm-deepseek": "workspace:^",
 diff --git a/apps/web/tests/settings-chrome.e2e.ts b/apps/web/tests/settings-chrome.e2e.ts
-index 19e1b33538d6cdb201fa953e9e8b20ebfc135552..ad9f34fbea3a0e1d35d6aceeabf2d182ba0c5a3e 100644
+index e6b10664af9c4ca82ef0120e53a493c5e0ce7e7d..a7688b8c20a429c48451a7dc5daf4eca619bf088 100644
 --- a/apps/web/tests/settings-chrome.e2e.ts
 +++ b/apps/web/tests/settings-chrome.e2e.ts
-@@ -64,6 +64,22 @@ describe('web e2e: settings modal and General preferences', () => {
+@@ -89,6 +89,22 @@ describe('web e2e: settings modal and General preferences', () => {
      // Golden of the freshly opened dialog (default zh, General active).
      const snapshot = await captureStableAria(page, '[role="dialog"]', scaffold.workspaceCwd)
      await compareOrRefreshGolden(DIALOG_EXPECTED, snapshot, MODE)
@@ -69,7 +26,7 @@ index 19e1b33538d6cdb201fa953e9e8b20ebfc135552..ad9f34fbea3a0e1d35d6aceeabf2d182
      await dialog.getByRole('button', { name: '模型' }).click()
      await expect.poll(() => dialog.getByRole('button', { name: '模型' }).getAttribute('aria-current'), { timeout: 5_000 }).toBe('true')
 diff --git a/apps/web/tests/snapshots/models-settings/configured.expected.md b/apps/web/tests/snapshots/models-settings/configured.expected.md
-index 07f96cb7ae56b8deb907fa28daeb1380ce5e5f7a..8680f5fc2581fe11c1136716ea869efd4a4b1676 100644
+index 036630c2d5a069d800951dab0b8e3542abbf2927..b81b9d403f065072a65eaa5831f0c26c8375f601 100644
 --- a/apps/web/tests/snapshots/models-settings/configured.expected.md
 +++ b/apps/web/tests/snapshots/models-settings/configured.expected.md
 @@ -7,6 +7,189 @@
@@ -259,11 +216,11 @@ index 07f96cb7ae56b8deb907fa28daeb1380ce5e5f7a..8680f5fc2581fe11c1136716ea869efd
 +    - button "workspace-context":
 +      - img
 +      - text: workspace-context
+   - button "打开配置文件"
    - button "关闭":
      - img
-     - text: 关闭
 diff --git a/apps/web/tests/snapshots/models-settings/empty.expected.md b/apps/web/tests/snapshots/models-settings/empty.expected.md
-index ffea707bd0500f419f6bfcfed386aad3b96715d6..f6e695d20b463a20376fa379a7d2cae079a824f9 100644
+index ab0a25b780244917af714a9651f22b6f1947f1f3..a23872342d4729f4fc4ef27e6628da142e6f27af 100644
 --- a/apps/web/tests/snapshots/models-settings/empty.expected.md
 +++ b/apps/web/tests/snapshots/models-settings/empty.expected.md
 @@ -7,6 +7,189 @@
@@ -453,11 +410,11 @@ index ffea707bd0500f419f6bfcfed386aad3b96715d6..f6e695d20b463a20376fa379a7d2cae0
 +    - button "workspace-context":
 +      - img
 +      - text: workspace-context
+   - button "打开配置文件"
    - button "关闭":
      - img
-     - text: 关闭
 diff --git a/apps/web/tests/snapshots/settings-chrome/dialog.expected.md b/apps/web/tests/snapshots/settings-chrome/dialog.expected.md
-index cb693b62a82a12f88fe77d87d202c06e9569f391..764239f54dd68697745c893b2bb6aa528b680a86 100644
+index f358ff26f5e08fb3daa25f5f0df25f2d19fbb179..6b9a84f5e767ec59ecc3355c6d420e2c0823b70e 100644
 --- a/apps/web/tests/snapshots/settings-chrome/dialog.expected.md
 +++ b/apps/web/tests/snapshots/settings-chrome/dialog.expected.md
 @@ -7,6 +7,189 @@
@@ -647,14 +604,14 @@ index cb693b62a82a12f88fe77d87d202c06e9569f391..764239f54dd68697745c893b2bb6aa52
 +    - button "workspace-context":
 +      - img
 +      - text: workspace-context
+   - button "打开配置文件"
    - button "关闭":
      - img
-     - text: 关闭
 diff --git a/docs/config-catalog.md b/docs/config-catalog.md
-index 0c6d58384e40055ccc9aec342bc0dad0ac904911..d9eb208867bec94ac0f210180268bb823214d78d 100644
+index 1f81974b21fbcccdb30138f8a3e747512530eac6..1273ea029a173517b9d2ff4e6bc46e7d1785eb6d 100644
 --- a/docs/config-catalog.md
 +++ b/docs/config-catalog.md
-@@ -560,6 +560,23 @@ export interface Config {
+@@ -573,6 +573,23 @@ export interface Config {
  
  Source: [`packages/host/directory-picker-browse/src/index.ts:181`](../packages/host/directory-picker-browse/src/index.ts)
  
@@ -678,7 +635,7 @@ index 0c6d58384e40055ccc9aec342bc0dad0ac904911..d9eb208867bec94ac0f210180268bb82
  ## `@deepseek-ai/dsh-host-webserver`
  
  ```ts config-catalog
-@@ -2278,6 +2295,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
+@@ -2561,6 +2578,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
  - `@deepseek-ai/dsh-client-ui-question` — requires `tools` · `userInteraction` ([`packages/client/ui-question/src/index.ts`](../packages/client/ui-question/src/index.ts))
  - `@deepseek-ai/dsh-client-ui-settings` ([`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts))
  - `@deepseek-ai/dsh-client-ui-settings-general` ([`packages/client/ui-settings-general/src/index.ts`](../packages/client/ui-settings-general/src/index.ts))
@@ -687,35 +644,90 @@ index 0c6d58384e40055ccc9aec342bc0dad0ac904911..d9eb208867bec94ac0f210180268bb82
  - `@deepseek-ai/dsh-client-ui-skill` ([`packages/client/ui-skill/src/index.ts`](../packages/client/ui-skill/src/index.ts))
  - `@deepseek-ai/dsh-client-ui-slash` ([`packages/client/ui-slash/src/index.ts`](../packages/client/ui-slash/src/index.ts))
 diff --git a/docs/event-producer-consumer.md b/docs/event-producer-consumer.md
-index 33a4704ee51c9dd3d0b76b302901b11cf0b18154..70e2f403dcee27756e29f27275579960c341bfa5 100644
+index 5c60be95e17b1f246ef86f27e5c7f8612aba6b32..42ae74fc1201b0e74fbdb06f6cc116c9d2ee1d74 100644
 --- a/docs/event-producer-consumer.md
 +++ b/docs/event-producer-consumer.md
-@@ -38,7 +38,7 @@ This matrix shows which packages dispatch each harness-owned event and which pac
- | `session/disposed` | `emit` | [`packages/core/session/src/index.ts:81`](../packages/core/session/src/index.ts) | [`session`](../packages/core/session) (`events.dispatch`) | [`agent-loop`](../packages/core/agent-loop), `apiproxy`, [`session-persistence`](../packages/session-persistence/session-persistence), [`session-projection-cache`](../packages/session-projection/session-projection-cache), [`session-telemetry`](../packages/telemetry/session-telemetry), [`session-title`](../packages/session-title/session-title) |
- | `session/event` | `emit` | [`packages/core/session/src/index.ts:93`](../packages/core/session/src/index.ts) | [`session`](../packages/core/session) (`events.dispatch`) | [`acp`](../packages/acp/acp), `apiproxy`, [`cli-demo`](../packages/examples/cli-demo), [`compact`](../packages/compact/compact), [`compact-basic`](../packages/compact/compact-basic), [`goal`](../packages/goal/goal), [`goal-session`](../packages/goal/goal-session), [`hook-protocol`](../packages/hooks/hook-protocol), [`jsonrpc`](../packages/ui/jsonrpc), [`session`](../packages/core/session), [`session-persistence`](../packages/session-persistence/session-persistence), [`session-projection`](../packages/session-projection/session-projection), [`session-projection-cache`](../packages/session-projection/session-projection-cache), [`session-telemetry`](../packages/telemetry/session-telemetry), [`session-title`](../packages/session-title/session-title), [`token-meter`](../packages/llm/token-meter), [`tools`](../packages/core/tools), [`user-approval`](../packages/ui/user-approval), [`workspace-context`](../packages/context/workspace-context) |
- | `session/flush` | `parallel` | [`packages/core/session/src/index.ts:102`](../packages/core/session/src/index.ts) | [`session`](../packages/core/session) (`events.dispatch`) | [`session-persistence`](../packages/session-persistence/session-persistence), [`session-telemetry`](../packages/telemetry/session-telemetry) |
--| `settings/document-updated` | `emit` | [`packages/settings/settings/src/index.ts:150`](../packages/settings/settings/src/index.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | `apiproxy` |
-+| `settings/document-updated` | `emit` | [`packages/settings/settings/src/index.ts:150`](../packages/settings/settings/src/index.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | `apiproxy`, `web-config-crawler` |
- | `settings/updated` | `emit` | [`packages/settings/settings/src/index.ts:137`](../packages/settings/settings/src/index.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | [`settings`](../packages/settings/settings) |
- | `skills/change` | `emit` | [`packages/skill/skill/src/index.ts:188`](../packages/skill/skill/src/index.ts) | [`skill`](../packages/skill/skill) (`events.dispatch`) | - |
+@@ -34,7 +34,7 @@ This matrix shows which packages dispatch each harness-owned event and which pac
+ | `session/disposed` | `emit` | [`packages/core/session/src/index.ts:84`](../packages/core/session/src/index.ts) | [`session`](../packages/core/session) (`events.dispatch`) | [`agent-loop`](../packages/core/agent-loop), `apiproxy`, [`session-persistence`](../packages/session-persistence/session-persistence), [`session-projection-cache`](../packages/session-projection/session-projection-cache), [`session-telemetry`](../packages/telemetry/session-telemetry), [`session-title`](../packages/session-title/session-title) |
+ | `session/event` | `emit` | [`packages/core/session/src/index.ts:96`](../packages/core/session/src/index.ts) | [`session`](../packages/core/session) (`events.dispatch`) | [`acp`](../packages/acp/acp), [`agent-loop`](../packages/core/agent-loop), `apiproxy`, [`compact`](../packages/compact/compact), [`compact-basic`](../packages/compact/compact-basic), [`goal`](../packages/goal/goal), [`goal-session`](../packages/goal/goal-session), [`hook-protocol`](../packages/hooks/hook-protocol), [`jsonrpc`](../packages/ui/jsonrpc), [`loader-smoke`](../packages/support/loader-smoke), [`session`](../packages/core/session), [`session-persistence`](../packages/session-persistence/session-persistence), [`session-projection`](../packages/session-projection/session-projection), [`session-projection-cache`](../packages/session-projection/session-projection-cache), [`session-telemetry`](../packages/telemetry/session-telemetry), [`session-telemetry-otel`](../packages/telemetry/session-telemetry-otel), [`session-title`](../packages/session-title/session-title), [`token-meter`](../packages/llm/token-meter), [`tools`](../packages/core/tools), [`user-approval`](../packages/ui/user-approval), [`workspace-context`](../packages/context/workspace-context) |
+ | `session/flush` | `parallel` | [`packages/core/session/src/index.ts:105`](../packages/core/session/src/index.ts) | [`session`](../packages/core/session) (`events.dispatch`) | [`session-persistence`](../packages/session-persistence/session-persistence), [`session-telemetry`](../packages/telemetry/session-telemetry) |
+-| `settings/document-updated` | `emit` | [`packages/settings/settings/src/index.ts:170`](../packages/settings/settings/src/index.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | `apiproxy` |
++| `settings/document-updated` | `emit` | [`packages/settings/settings/src/index.ts:170`](../packages/settings/settings/src/index.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | `apiproxy`, `web-config-crawler` |
+ | `settings/updated` | `emit` | [`packages/settings/settings/src/index.ts:157`](../packages/settings/settings/src/index.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | [`settings`](../packages/settings/settings) |
+ | `skills/change` | `emit` | [`packages/skill/skill/src/index.ts:283`](../packages/skill/skill/src/index.ts) | [`skill`](../packages/skill/skill) (`events.dispatch`) | - |
  | `subagent/end` | `emit` | [`packages/subagent/subagent/src/index.ts:160`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`events.dispatch`) | [`hooks-claude`](../packages/hooks/hooks-claude), [`jsonrpc`](../packages/ui/jsonrpc), [`subagent`](../packages/subagent/subagent) |
+diff --git a/package.json b/package.json
+index 423cbf813c47ac78cdbdafadff4537c1eda890e6..5f7011fa6fb6e0804bf04d514ccdedc1e6eb3bda 100644
+--- a/package.json
++++ b/package.json
+@@ -164,6 +164,7 @@
+     "tsdown": "^0.22.2",
+     "tsx": "^4.22.4",
+     "typescript": "^6.0.3",
++    "unrun": "^0.3.1",
+     "vite-tsconfig-paths": "^6.1.1",
+     "vitest": "^4.1.8"
+   }
+diff --git a/packages/bundle/web-app/cordis.patch.yml b/packages/bundle/web-app/cordis.patch.yml
+index 62ed35bd4991a7f18c4a48089812917d1b8bc8bf..98470e2ce87ef53fe392b02fe243baebd58504d2 100644
+--- a/packages/bundle/web-app/cordis.patch.yml
++++ b/packages/bundle/web-app/cordis.patch.yml
+@@ -143,6 +143,18 @@
+     - id: ui-settings-general
+       name: '@deepseek-ai/dsh-client-ui-settings-general'
+ 
++    # Automatic plugin configuration: served settings namespaces and schema-
++    # carrying composition rows become source-distinct first-level Settings
++    # navigation. The crawler needs no per-plugin opt-in.
++    - id: ui-settings-plugins
++      name: '@deepseek-ai/dsh-client-ui-settings-plugins'
++
++    # The deployment-level opt-in that turns the settings wire into a full
++    # enumeration: every registered settings namespace becomes readable and
++    # writable through the loopback-only configuration plane.
++    - id: web-config-crawler
++      name: '@deepseek-ai/dsh-host-web-config-crawler'
++
+     - id: ui-models
+       name: '@deepseek-ai/dsh-client-ui-models'
+ 
+diff --git a/packages/bundle/web-app/package.json b/packages/bundle/web-app/package.json
+index 9b8e15fd66a983a44dbc9219296661a8585a22c0..9fd5dcdee41d6d83673ddbf6e027cf6ecb647f40 100644
+--- a/packages/bundle/web-app/package.json
++++ b/packages/bundle/web-app/package.json
+@@ -50,6 +50,7 @@
+     "@deepseek-ai/dsh-client-ui-question": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-settings": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-settings-general": "workspace:^",
++    "@deepseek-ai/dsh-client-ui-settings-plugins": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-sidebar": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-skill": "workspace:^",
+     "@deepseek-ai/dsh-client-ui-slash": "workspace:^",
+@@ -65,6 +66,7 @@
+     "@deepseek-ai/dsh-host-directory-picker-auto": "workspace:^",
+     "@deepseek-ai/dsh-host-directory-picker-browse": "workspace:^",
+     "@deepseek-ai/dsh-host-directory-picker-native": "workspace:^",
++    "@deepseek-ai/dsh-host-web-config-crawler": "workspace:^",
+     "@deepseek-ai/dsh-host-webserver": "workspace:^",
+     "@deepseek-ai/dsh-session-projection-cache": "workspace:^",
+     "@deepseek-ai/dsh-storage": "workspace:^",
 diff --git a/packages/client/connection/src/client/api.ts b/packages/client/connection/src/client/api.ts
-index 04e9fcb7130aede60e020e1a8116c3f3ef51a9f0..5066854cc236561f55cc6547a2b3f5e632d49c92 100644
+index 6f29b2dda036c01b96f1b8e9bc5de4f77eb55141..7b04b5bfad193320c6df1816fe13043e8519dce6 100644
 --- a/packages/client/connection/src/client/api.ts
 +++ b/packages/client/connection/src/client/api.ts
 @@ -15,6 +15,7 @@ export type {
-   InboxItemId, ModelReasoningEffort, ModelTarget, QueueAction, QueuedInboxItem, SessionModels,
+   ModelReasoningEffort, ModelTarget, QueueAction, QueuedInboxItem, SessionModels,
    GoalsApi, GoalRef,
    SettingsApi, SettingsNamespaceView, SettingsPathOpView, SettingsSecretView,
 +  CompositionApi, CompositionNamespaceView, CompositionSecretView,
-   CredentialsApi, CredentialView, ConfigurableProviderView, LlmApi,
+   CredentialsApi, CredentialView, ConfigurableProviderView, DiscoveredModelView, LlmApi,
    SubagentsApi, SubagentAddress, SubagentCatalog, SubagentListEntry, SubagentPromptReceipt,
  } from '@deepseek-ai/dsh-host-apiproxy/api'
 diff --git a/packages/client/connection/src/client/fixture.ts b/packages/client/connection/src/client/fixture.ts
-index 38cdffd6ed3fa262ea608db09bfb0458994fcaf5..96049c37182de2c36859a9fa057faf8cf7384641 100644
+index 491e161336dd041c5f6425fb6d79cadbca139fa7..6b015781f45084381ea13ef0f3062335f8922696 100644
 --- a/packages/client/connection/src/client/fixture.ts
 +++ b/packages/client/connection/src/client/fixture.ts
-@@ -2415,6 +2415,19 @@ export function createFixtureApi(options: FixtureOptions = {}): ApiProxy {
+@@ -2592,6 +2592,19 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
          details: { ns: request.payload.ns },
        }),
      },
@@ -735,7 +747,7 @@ index 38cdffd6ed3fa262ea608db09bfb0458994fcaf5..96049c37182de2c36859a9fa057faf8c
      credentials: {
        describe: request => ok(request, {
          credentials: Object.fromEntries(request.payload.refs.map(ref => [ref, {
-@@ -2548,6 +2561,9 @@ export class FixtureApiClient extends AbstractApiClient {
+@@ -2768,6 +2781,9 @@ export class FixtureApiClient extends AbstractApiClient {
        case 'goal.resume': return this.api.goals.resume(request)
        case 'goal.complete': return this.api.goals.complete(request)
        case 'goal.clear': return this.api.goals.clear(request)
@@ -743,25 +755,25 @@ index 38cdffd6ed3fa262ea608db09bfb0458994fcaf5..96049c37182de2c36859a9fa057faf8c
 +      case 'composition.update': return this.api.composition.update(request)
 +      case 'composition.remove': return this.api.composition.remove(request)
        case 'settings.describe': return this.api.settings.describe(request)
+       case 'settings.openDocument': return this.api.settings.openDocument(request, signal)
        case 'settings.update': return this.api.settings.update(request)
-       case 'settings.replace': return this.api.settings.replace(request)
 diff --git a/packages/client/connection/src/client/index.ts b/packages/client/connection/src/client/index.ts
-index 9e33e63ce227907ee0e36b496016b20e1ff726e9..104b2ed1762d9eab023eb67ed956f3192f305062 100644
+index c2a6668d46ab14dc14e19fb153b4b39b63e17947..efe60383a2ffc0a3394bffa974540870372aaa2d 100644
 --- a/packages/client/connection/src/client/index.ts
 +++ b/packages/client/connection/src/client/index.ts
-@@ -26,6 +26,7 @@ export type {
+@@ -28,6 +28,7 @@ export type {
    GoalsApi, GoalRef,
    SettingsApi, SettingsNamespaceView, SettingsPathOpView, SettingsSecretView,
-   CredentialsApi, CredentialView, ConfigurableProviderView, LlmApi,
+   CredentialsApi, CredentialView, ConfigurableProviderView, DiscoveredModelView, LlmApi,
 +  CompositionApi, CompositionNamespaceView, CompositionSecretView,
  } from './api.ts'
  export {
    RpcId,
 diff --git a/packages/client/connection/tests/fake-api.ts b/packages/client/connection/tests/fake-api.ts
-index a612494f5076719e48bfd33aa276c14e44822d0d..a9cb30fc22abf5b593a74123e05c1ed2df47e317 100644
+index 54e45fefd9ec9b29386b41363b3f9166f8488d59..fcea92616eea32e23b1bc897113a95431942c5c2 100644
 --- a/packages/client/connection/tests/fake-api.ts
 +++ b/packages/client/connection/tests/fake-api.ts
-@@ -187,6 +187,12 @@ export class FakeApiClient implements IApiClient {
+@@ -190,6 +190,12 @@ export class FakeApiClient implements IApiClient {
      mutate: payload => this.record('settings.mutate', payload, Promise.resolve(ok({ ns: 'fake', schema: {}, value: {}, applies: 'live' as const, secrets: [], revision: 0 }))),
    }
  
@@ -775,10 +787,10 @@ index a612494f5076719e48bfd33aa276c14e44822d0d..a9cb30fc22abf5b593a74123e05c1ed2
      describe: payload => this.record('credentials.describe', payload, Promise.resolve(ok({ credentials: {} }))),
      set: payload => this.record('credentials.set', payload, Promise.resolve(ok({}))),
 diff --git a/packages/client/runtime/tests/fake-api.ts b/packages/client/runtime/tests/fake-api.ts
-index d50113b18770488fbc7a9d893eaa0d7db61e5f56..c4c24188e28a32d2995f9572d0ad4d74576fbbcb 100644
+index 8d33922ac5d39c7aab4dff2eb47e45f76efc986d..1c0a9f57eb02c03cd2a62e6c0f7a0d96ca72687f 100644
 --- a/packages/client/runtime/tests/fake-api.ts
 +++ b/packages/client/runtime/tests/fake-api.ts
-@@ -222,6 +222,12 @@ export class FakeApiClient implements IApiClient {
+@@ -225,6 +225,12 @@ export class FakeApiClient implements IApiClient {
      mutate: payload => this.record('settings.mutate', payload, Promise.resolve(ok({ ns: 'fake', schema: {}, value: {}, applies: 'live' as const, secrets: [], revision: 0 }))),
    }
  
@@ -792,45 +804,45 @@ index d50113b18770488fbc7a9d893eaa0d7db61e5f56..c4c24188e28a32d2995f9572d0ad4d74
      describe: payload => this.record('credentials.describe', payload, Promise.resolve(ok({ credentials: {} }))),
      set: payload => this.record('credentials.set', payload, Promise.resolve(ok({}))),
 diff --git a/packages/client/ui-settings/README.i18n.yaml b/packages/client/ui-settings/README.i18n.yaml
-index 668853e41f7bd1d805efc30b87179dc4ef7f7836..c5b5478188fc73d08b4d83562136402a5caf5a06 100644
+index 5871fb996f3debab9396aa4f2d711ae72c468f57..32bc63b8edf561ba40857fd863fc36a32486b5e7 100644
 --- a/packages/client/ui-settings/README.i18n.yaml
 +++ b/packages/client/ui-settings/README.i18n.yaml
 @@ -2,5 +2,5 @@
  # side as of the last confirmed-consistent state. Both languages carry equal authority;
  # after editing either side, bring the other along and re-record with:
  #   pnpm run verify-translation-pairing --write packages/client/ui-settings/README.md
--README.md: 14c78c83467313a6efa7033c31fb9c9b1cd94e0c
--README.zh.md: 8831842d03db4572f1dca5547b84c0d8a3be8f2d
-+README.md: 954b6313dcc16ff3880b3a0bc04f26a72f9204db
-+README.zh.md: f37f3920ef8ca91594c1454cf5dc59346a381c64
+-README.md: 785f0417f00ec8eb1f8c9273b4d81f8ca5ca1810
+-README.zh.md: 8e7bd7325b78416345985ee25a56a5eb8b382478
++README.md: 67cdbe8540778cf0b12a9969a186cac45b1baeb4
++README.zh.md: 33e1e63419a8c3f683e4ee56b0e6373b188a00d7
 diff --git a/packages/client/ui-settings/README.md b/packages/client/ui-settings/README.md
-index 14c78c83467313a6efa7033c31fb9c9b1cd94e0c..954b6313dcc16ff3880b3a0bc04f26a72f9204db 100644
+index 785f0417f00ec8eb1f8c9273b4d81f8ca5ca1810..67cdbe8540778cf0b12a9969a186cac45b1baeb4 100644
 --- a/packages/client/ui-settings/README.md
 +++ b/packages/client/ui-settings/README.md
 @@ -2,7 +2,7 @@
  
  English | [中文](README.zh.md)
  
--Settings shell plugin: a pure composition face. It occupies `sidebar.settings` with the trigger chrome and modal settings panel, and declares the slots registrants fill: `settings.trigger` / `settings.header` / `settings.close` (chrome content), `settings.section` (one page per feature), and `settings.onboarding` (ordered feature-owned pages in a full-viewport stage). The shell ships no copy of its own — all text arrives from registrants (ui-settings-general owns chrome, General, and the product notice; features own their sections, rows, and conditional onboarding pages). Nav labels may be locale-following thunks, so the nav projection resolves them through `resolveSlotLabel` and re-renders on the section ledger bump or the locale revision (an optional `ctx.get('locale')` read; no hard locale dependency).
-+Settings shell plugin: a pure composition face. It occupies `sidebar.settings` with the trigger chrome and modal settings panel, and declares the slots registrants fill: `settings.trigger` / `settings.header` / `settings.close` (chrome content), `settings.section` (one page per feature), and `settings.onboarding` (ordered feature-owned pages in a full-viewport stage). The shell ships no copy of its own — all text arrives from registrants (ui-settings-general owns chrome, General, and the product notice; features own their sections, rows, and conditional onboarding pages). Nav labels may be locale-following thunks, so the nav projection resolves them through `resolveSlotLabel` and re-renders on the section ledger bump or the locale revision (an optional `ctx.get('locale')` read; no hard locale dependency). The navigation rail scrolls independently when contributions exceed the panel height.
+-Settings shell plugin: a pure composition face. It occupies `sidebar.settings` with the trigger chrome and modal settings panel, and declares the slots registrants fill: `settings.trigger` / `settings.header` / `settings.close` (chrome content), `settings.action` (ordered content-header actions), `settings.section` (one page per feature), and `settings.onboarding` (ordered feature-owned pages in a full-viewport stage). The shell ships no copy of its own — all text arrives from registrants (ui-settings-general owns chrome, General, and the product notice; features own their actions, sections, rows, and conditional onboarding pages). Nav labels may be locale-following thunks, so the nav projection resolves them through `resolveSlotLabel` and re-renders on the section ledger bump or the locale revision (an optional `ctx.get('locale')` read; no hard locale dependency).
++Settings shell plugin: a pure composition face. It occupies `sidebar.settings` with the trigger chrome and modal settings panel, and declares the slots registrants fill: `settings.trigger` / `settings.header` / `settings.close` (chrome content), `settings.action` (ordered content-header actions), `settings.section` (one page per feature), and `settings.onboarding` (ordered feature-owned pages in a full-viewport stage). The shell ships no copy of its own — all text arrives from registrants (ui-settings-general owns chrome, General, and the product notice; features own their actions, sections, rows, and conditional onboarding pages). Nav labels may be locale-following thunks, so the nav projection resolves them through `resolveSlotLabel` and re-renders on the section ledger bump or the locale revision (an optional `ctx.get('locale')` read; no hard locale dependency). The navigation rail scrolls independently when contributions exceed the panel height.
  
- The shell projects the onboarding ledger into ascending order and mounts exactly one page at a time in a body-level stage while marking the underlying app root inert. The active registrant receives its id, `complete()`, and an `openSection(id)` callback; completing or skipping transfers ownership to the next entry. Registrants own durable completion, capability readiness, copy, and mutations, so independently registered flows cannot stack and the shell does not become a second configuration fact source.
+ The shell projects the onboarding ledger into ascending order and mounts exactly one page at a time; the takeover chrome (body-level stage, mask, app-root `inert`) belongs to the step itself through ui-primitives' `OnboardingSurface`, so a mounted step still resolving its private facts renders null and neither paints nor blocks anything — the shell shows no empty stage while a step decides. The active registrant receives its id, `complete()`, and an `openSection(id)` callback; completing or skipping transfers ownership to the next entry. Registrants own durable completion, capability readiness, copy, mutations, and the surface wrap, so independently registered flows cannot stack and the shell does not become a second configuration fact source.
  
 diff --git a/packages/client/ui-settings/README.zh.md b/packages/client/ui-settings/README.zh.md
-index 8831842d03db4572f1dca5547b84c0d8a3be8f2d..f37f3920ef8ca91594c1454cf5dc59346a381c64 100644
+index 8e7bd7325b78416345985ee25a56a5eb8b382478..33e1e63419a8c3f683e4ee56b0e6373b188a00d7 100644
 --- a/packages/client/ui-settings/README.zh.md
 +++ b/packages/client/ui-settings/README.zh.md
 @@ -2,7 +2,7 @@
  
  [English](README.md) | 中文
  
--设置外壳插件：一个纯组合表层。它以触发控件和模态设置面板占用 `sidebar.settings`，并声明由注册方填充的 slot：`settings.trigger`／`settings.header`／`settings.close`（界面框架内容）、`settings.section`（每项功能一页）和 `settings.onboarding`（由各功能持有、显示在全视口展示层中的有序页面）。外壳不自带文案：所有文本都来自注册方（ui-settings-general 拥有界面框架、「通用」分区和产品声明；各功能拥有各自的分区、行和条件式首次使用引导页面）。导航 label 可以是跟随语言的 thunk，因此导航投影经 `resolveSlotLabel` 解析，并在分区账本更新或 locale revision 变化时重新渲染（`ctx.get('locale')` 可选读取，无硬 locale 依赖）。
-+设置外壳插件：一个纯组合表层。它以触发控件和模态设置面板占用 `sidebar.settings`，并声明由注册方填充的 slot：`settings.trigger`／`settings.header`／`settings.close`（界面框架内容）、`settings.section`（每项功能一页）和 `settings.onboarding`（由各功能持有、显示在全视口展示层中的有序页面）。外壳不自带文案：所有文本都来自注册方（ui-settings-general 拥有界面框架、「通用」分区和产品声明；各功能拥有各自的分区、行和条件式首次使用引导页面）。导航 label 可以是跟随语言的 thunk，因此导航投影经 `resolveSlotLabel` 解析，并在分区账本更新或 locale revision 变化时重新渲染（`ctx.get('locale')` 可选读取，无硬 locale 依赖）。当贡献项超出面板高度时，导航栏独立滚动。
+-设置外壳插件：一个纯组合表层。它以触发控件和模态设置面板占用 `sidebar.settings`，并声明由注册方填充的 slot：`settings.trigger`／`settings.header`／`settings.close`（界面框架内容）、`settings.action`（内容标题栏中的有序操作）、`settings.section`（每项功能一页）和 `settings.onboarding`（由各功能持有、显示在全视口展示层中的有序页面）。外壳不自带文案：所有文本都来自注册方（ui-settings-general 拥有界面框架、「通用」分区和产品声明；各功能拥有各自的操作、分区、行和条件式首次使用引导页面）。导航 label 可以是跟随语言的 thunk，因此导航投影经 `resolveSlotLabel` 解析，并在分区账本更新或 locale revision 变化时重新渲染（`ctx.get('locale')` 可选读取，无硬 locale 依赖）。
++设置外壳插件：一个纯组合表层。它以触发控件和模态设置面板占用 `sidebar.settings`，并声明由注册方填充的 slot：`settings.trigger`／`settings.header`／`settings.close`（界面框架内容）、`settings.action`（内容标题栏中的有序操作）、`settings.section`（每项功能一页）和 `settings.onboarding`（由各功能持有、显示在全视口展示层中的有序页面）。外壳不自带文案：所有文本都来自注册方（ui-settings-general 拥有界面框架、「通用」分区和产品声明；各功能拥有各自的操作、分区、行和条件式首次使用引导页面）。导航 label 可以是跟随语言的 thunk，因此导航投影经 `resolveSlotLabel` 解析，并在分区账本更新或 locale revision 变化时重新渲染（`ctx.get('locale')` 可选读取，无硬 locale 依赖）。当贡献项超出面板高度时，导航栏独立滚动。
  
- 外壳将首次使用引导记录按升序投影，在 body 层级的展示层中每次只挂载一个页面，同时将下层应用根节点标记为 `inert`。当前注册方会收到该条目的 id、`complete()` 和 `openSection(id)` 回调；完成或跳过当前页面后，所有权转交给下一项。持久化完成状态、能力就绪状态、文案和变更操作均由注册方持有，因此独立注册的流程无法堆叠，外壳也不会成为第二个配置事实来源。
+ 外壳将首次使用引导记录按升序投影，每次只挂载一个页面；接管界面框架（body 层级的展示层、遮罩、应用根节点 `inert`）经 ui-primitives 的 `OnboardingSurface` 由步骤自身持有，因此已挂载但仍在判定私有事实的步骤渲染 null 时不绘制也不阻塞任何内容——步骤判定期间外壳不会露出空白展示层。当前注册方会收到该条目的 id、`complete()` 和 `openSection(id)` 回调；完成或跳过当前页面后，所有权转交给下一项。持久化完成状态、能力就绪状态、文案、变更操作以及页面的外层包裹均由注册方持有，因此独立注册的流程无法堆叠，外壳也不会成为第二个配置事实来源。
  
 diff --git a/packages/client/ui-settings/src/client/SettingsRoot.module.css b/packages/client/ui-settings/src/client/SettingsRoot.module.css
-index 817ab38d9a6aaf8bf11464f0f46291f1a588e36b..2b0db751ef3f08b65c5c641ce1f4adb9be1bddc7 100644
+index e70558081a9a07755fd57103eb62f754d76af3aa..b43caa4c67adcc05ab7a35e13d57d3eaefc2684b 100644
 --- a/packages/client/ui-settings/src/client/SettingsRoot.module.css
 +++ b/packages/client/ui-settings/src/client/SettingsRoot.module.css
 @@ -108,9 +108,14 @@
@@ -848,49 +860,41 @@ index 817ab38d9a6aaf8bf11464f0f46291f1a588e36b..2b0db751ef3f08b65c5c641ce1f4adb9
  }
  
  /* Nav cell (figma .Setting-nav-cell 501:29962): 164x40, r12, pad
-diff --git a/packages/host/apiproxy/README.i18n.yaml b/packages/host/apiproxy/README.i18n.yaml
-index e7b813d3919f9430639281489ea01d56d6eeffa2..44b89bab0bc262bd5180f4d49fd9a1be4ca08ea6 100644
---- a/packages/host/apiproxy/README.i18n.yaml
-+++ b/packages/host/apiproxy/README.i18n.yaml
-@@ -2,5 +2,5 @@
- # side as of the last confirmed-consistent state. Both languages carry equal authority;
- # after editing either side, bring the other along and re-record with:
- #   pnpm run verify-translation-pairing --write packages/host/apiproxy/README.md
--README.md: ed04a3431e4c9114b3115119c1e69d378cec77ae
--README.zh.md: e50a7f49cb8753f5b26dd27cb1d48a9cc18e9fd7
-+README.md: f8fd90cdc9ec35906856018ea2a06db704a40dc2
-+README.zh.md: 98f7cf8cf3022dad1a77d4eabe71a410969ee6ae
 diff --git a/packages/host/apiproxy/README.md b/packages/host/apiproxy/README.md
-index ed04a3431e4c9114b3115119c1e69d378cec77ae..f8fd90cdc9ec35906856018ea2a06db704a40dc2 100644
+index a3c9f214690144ec0f39a8690e4fd346f5e315e2..b309a31746a4fa41a305b111531852049324b77c 100644
 --- a/packages/host/apiproxy/README.md
 +++ b/packages/host/apiproxy/README.md
-@@ -38,7 +38,7 @@ Directory picking delegates to the composed `ctx.directoryPicker` backend ([the
+@@ -50,6 +50,10 @@ The `command.*` and `skill.*` domains expose the host command registry and skill
  
- The `command.*` and `skill.*` domains expose the host command registry and skill catalog to clients. `command.*` addresses an ordinary session's Agent and resumes a cold ordinary session when needed, while `skill.list` resolves the project root from the session header without touching the Agent registry. `skill.list` serves the browser's user-selected model-reference path, so it returns only skills that are both model-invocable and user-invocable; this domain has no direct skill-loading RPC. `command.execute` runs a slash-command line host-side with pure admission semantics: the response reports whether the line resolved to a handler plus the minted lifecycle `commandId` when it did (correlating the acknowledgment with the flow node), while the outcome rides the durably logged `command/run`/`command/done` lifecycle pair broadcast on the mux stream. Command handlers may legitimately outlast the 30-second transport health deadline, so `command.execute` carries only caller/connection cancellation; that signal cancels the running handler. `host/commands-changed` is the catalog invalidation frame: clients refetch `command.list` instead of diffing.
+ The `settings.*`, `credentials.*`, and `llm.*` domains are the configuration-page wire. The settings domain serves the namespaces addressed by registered configurable providers (`ctx.llm.listConfigurableProviders()`) plus a small explicit allowlist — the Web preference `permission` and the product-owned `ui-onboarding`; adding a Settings registration alone never makes it remotely readable or writable. Any other namespace answers `settings-not-exposed` — the same answer an unregistered namespace gets, so no caller can enumerate the registry by probing. `settings.describe` returns each exposed namespace's serialized schemastery schema, redacted layered values (resolved/`base`/`user` — a field's presence in `user` marks it user-overridden), the `secrets` slot list, the section's `revision`, and the boolean `hasDocument` capability flag. The browser receives no Host path: pathless `settings.openDocument` asks the provider to materialize its document and then hands the Host-resolved result to the native opener, so no browser payload can select an arbitrary filesystem target. `settings.update`/`settings.replace` write the user layer; `settings.mutate` applies path ops (`set`/`unset`) against the section as stored, which is the removal path for a client holding the redacted view — rebuilding a section from it and replacing wholesale would delete the secrets the wire never returned. Any write may carry `expectedRevision`; a stale one answers `settings-conflict` with both revisions rather than overwriting the writer that landed first, and every other seam refusal folds into `settings-rejected`. Secret-role values never ride any response in any layer; a secret crosses the wire in exactly one direction — inside an `update`/`mutate` payload or `credentials.set`. `credentials.describe` returns value-free views (`configured`/`source`/`writable`), and `credentials.set`/`credentials.unset` map a shadowed-reference refusal onto `credential-rejected`. `llm.providers` merges the configurable-provider directory with live routes (dormant entries carry `active: false`; undeclared live routes append with no settings address) and `llm.models` is the session-independent catalog. `llm.discoverModels` interrogates a provider endpoint the page is still drafting: `settingsNs` selects the adapter family that knows how to read the listing, and the endpoint, protocol, and key come from the form rather than from storage. It writes nothing — the reply is candidates, and only a later `settings.mutate` decides what a route serves — so its `apiKey` is the third payload on which a secret may ride, alongside `settings.update`/`mutate` and `credentials.set`. The host never stores or returns it; like the other two it does ride the client's outgoing envelope, which `subscribeEnvelopes()` observers can see, and redacting that tap is a configuration-plane-wide change rather than this method's to make alone. Every refusal (an unserved namespace, a protocol with no readable listing, an unreachable endpoint, a rejected credential) folds into `model-discovery-failed`, whose message is the adapter's own text and whose details name the endpoint asked but never the credential offered. Three invalidation frames keep every surface converged without polling: `host/settings-changed {ns}` (`settings/document-updated` passthrough, so a raw change whose resolved value is unchanged still reaches clients), `host/credentials-changed {ref}` (reference names only, never values), and `host/models-changed` — fired by `llm/adapters-updated` and by a change to a configurable-provider namespace, whose settings carry that provider's catalog and endpoint; a `permission` or `ui-onboarding` change emits only its settings invalidation. The browser carrier restricts the whole configuration plane, reads and native actions included (`settings.describe`/`openDocument`/`update`/`replace`/`mutate`, `credentials.describe`/`set`/`unset`), to loopback same-origin requests — the `host.pickDirectory` privileged set. A composition without a settings or credential provider answers those domains with an actionable `internal` error naming the missing plugin.
  
--The `settings.*`, `credentials.*`, and `llm.*` domains are the configuration-page wire. The settings domain serves the namespaces addressed by registered configurable providers (`ctx.llm.listConfigurableProviders()`) plus a small explicit allowlist — the Web preference `permission` and the product-owned `ui-onboarding`; adding a Settings registration alone never makes it remotely readable or writable. Any other namespace answers `settings-not-exposed` — the same answer an unregistered namespace gets, so no caller can enumerate the registry by probing. `settings.describe` returns each exposed namespace's serialized schemastery schema, redacted layered values (resolved/`base`/`user` — a field's presence in `user` marks it user-overridden), the `secrets` slot list, and the section's `revision`. `settings.update`/`settings.replace` write the user layer; `settings.mutate` applies path ops (`set`/`unset`) against the section as stored, which is the removal path for a client holding the redacted view — rebuilding a section from it and replacing wholesale would delete the secrets the wire never returned. Any write may carry `expectedRevision`; a stale one answers `settings-conflict` with both revisions rather than overwriting the writer that landed first, and every other seam refusal folds into `settings-rejected`. Secret-role values never ride any response in any layer; a secret crosses the wire in exactly one direction — inside an `update`/`mutate` payload or `credentials.set`. `credentials.describe` returns value-free views (`configured`/`source`/`writable`), and `credentials.set`/`credentials.unset` map a shadowed-reference refusal onto `credential-rejected`. `llm.providers` merges the configurable-provider directory with live routes (dormant entries carry `active: false`; undeclared live routes append with no settings address) and `llm.models` is the session-independent catalog. Three invalidation frames keep every surface converged without polling: `host/settings-changed {ns}` (`settings/document-updated` passthrough, so a raw change whose resolved value is unchanged still reaches clients), `host/credentials-changed {ref}` (reference names only, never values), and `host/models-changed` — fired by `llm/adapters-updated` and by a change to a configurable-provider namespace, whose settings carry that provider's catalog and endpoint; a `permission` or `ui-onboarding` change emits only its settings invalidation. The browser carrier restricts the whole configuration plane, reads included (`settings.describe`/`update`/`replace`/`mutate`, `credentials.describe`/`set`/`unset`), to loopback same-origin requests — the `host.pickDirectory` privileged set. A composition without a settings or credential provider answers those domains with an actionable `internal` error naming the missing plugin.
-+The `settings.*`, `credentials.*`, and `llm.*` domains are the configuration-page wire. The settings domain serves the namespaces addressed by registered configurable providers (`ctx.llm.listConfigurableProviders()`) plus a small explicit allowlist — the Web preference `permission` and the product-owned `ui-onboarding`. When the [web-config-crawler](../../../packages/host/web-config-crawler/README.md) plugin is mounted, the domain additionally serves EVERY registered settings namespace — the deployment's explicit opt-in to a fully automatic configuration surface, with no per-plugin action needed. Without the crawler, adding a Settings registration alone never makes it remotely readable or writable. Any other namespace answers `settings-not-exposed` — the same answer an unregistered namespace gets, so no caller can enumerate the registry by probing. The `composition.*` domain rides the same crawler: `composition.describe` lists every mounted plugin whose cordis.yml row carries a `Config` schema (redacted), `composition.update` applies path-addressed ops host-side to the plugin's current resolved configuration and persists the full row into the personal overlay, and `composition.remove` deletes the overlay row so the next boot reverts to the lower layers. Without the crawler the domain answers an actionable `internal` error; write refusals map to `composition-rejected {id}`. `settings.describe` returns each exposed namespace's serialized schemastery schema, redacted layered values (resolved/`base`/`user` — a field's presence in `user` marks it user-overridden), the `secrets` slot list, and the section's `revision`. `settings.update`/`settings.replace` write the user layer; `settings.mutate` applies path ops (`set`/`unset`) against the section as stored, which is the removal path for a client holding the redacted view — rebuilding a section from it and replacing wholesale would delete the secrets the wire never returned. Any write may carry `expectedRevision`; a stale one answers `settings-conflict` with both revisions rather than overwriting the writer that landed first, and every other seam refusal folds into `settings-rejected`. Secret-role values never ride any response in any layer; a secret crosses the wire in exactly one direction — inside an `update`/`mutate` payload or `credentials.set`. `credentials.describe` returns value-free views (`configured`/`source`/`writable`), and `credentials.set`/`credentials.unset` map a shadowed-reference refusal onto `credential-rejected`. `llm.providers` merges the configurable-provider directory with live routes (dormant entries carry `active: false`; undeclared live routes append with no settings address) and `llm.models` is the session-independent catalog. Three invalidation frames keep every surface converged without polling: `host/settings-changed {ns}` (`settings/document-updated` passthrough, so a raw change whose resolved value is unchanged still reaches clients), `host/credentials-changed {ref}` (reference names only, never values), and `host/models-changed` — fired by `llm/adapters-updated` and by a change to a configurable-provider namespace, whose settings carry that provider's catalog and endpoint; a `permission` or `ui-onboarding` change emits only its settings invalidation. The browser carrier restricts the whole configuration plane, reads included (`settings.describe`/`update`/`replace`/`mutate`, `credentials.describe`/`set`/`unset`), to loopback same-origin requests — the `host.pickDirectory` privileged set. A composition without a settings or credential provider answers those domains with an actionable `internal` error naming the missing plugin.
++When the [web-config-crawler](../../../packages/host/web-config-crawler/README.md) plugin is mounted, the settings domain additionally serves every registered settings namespace as an explicit deployment opt-in. The `composition.*` domain rides the same crawler: `composition.describe` lists configurable plugin rows with redacted values, `composition.update` applies path-addressed operations and persists the full row into the personal overlay, and `composition.remove` removes the overlay row so the lower layer is used again. Without the crawler, these domains return actionable errors; write refusals use `composition-rejected {id}`. Settings, credential, and model changes emit invalidation frames so browser projections converge without polling.
++
++The `subagent.*` domain addresses direct children by `{parentSessionId, childSessionId}`. `subagent.list` projects the durable child catalog, `subagent.history` reads a persisted child without resuming it, and `subagent.prompt` delivers continuable follow-ups only when the exact live parent is available.
++
+ ## Carrier layer (`/client` + root)
  
- The `subagent.*` domain addresses direct children by `{parentSessionId, childSessionId}`. `subagent.list` projects the complete durable one-shot and continuable catalog from `ctx.subagents.listChildren`, including each healthy row's origin-classified `hasChildren` hint, replaces corpus activity with the exact child Agent driver's running state, and includes an exact-live-parent hint; `subagent.history` verifies a healthy direct-child entry and reads its persisted log through `ctx.sessionQuery` without resuming an Agent. `subagent.prompt` accepts only continuable addresses, requires that exact live parent, delivers human content through `ctx.subagents.followup()` with the request `rpcId` as attribution, and returns the accepted inbox `messageId`. Typed errors preserve catalog diagnostics, parent availability, resumability, authorization, and not-delivered distinctions without exposing the model-hidden continuation descriptor. See the [Web subagent conversations Agent Note](../../../.agents/notes/implemented/feature/2026-07-27-web-subagent-conversations.md).
- 
+ `AbstractApiClient` holds every protocol invariant — rpcId minting, envelope wrap/unwrap, zod parsing, SSE frame decoding, unary timeout, microtask-batched envelope observation (`subscribeEnvelopes`) — while platform subclasses supply only the `doFetch` transport aspect. `InProcessApiClient` over `toFetchHandler(api)` is the isomorphic point: the full wire serialization/validation path with no network, used by `dsh run` headless.
 diff --git a/packages/host/apiproxy/README.zh.md b/packages/host/apiproxy/README.zh.md
-index e50a7f49cb8753f5b26dd27cb1d48a9cc18e9fd7..98f7cf8cf3022dad1a77d4eabe71a410969ee6ae 100644
+index aeaf1b29e5a71674c9feedb30b67f9ce11c47340..5f9698254d527dfee88499137667666f15027508 100644
 --- a/packages/host/apiproxy/README.zh.md
 +++ b/packages/host/apiproxy/README.zh.md
-@@ -38,7 +38,7 @@ Workspace 列表与 Session 列表是相互独立的重连基线。`workspace.cr
+@@ -50,6 +50,10 @@ Workspace 列表与 Session 列表是相互独立的重连基线。`workspace.cr
  
- `command.*` 与 `skill.*` 领域向客户端暴露宿主命令注册表和技能目录。`command.*` 寻址普通会话的 Agent，并在需要时恢复冷态普通会话；`skill.list` 则从会话头解析项目根目录，不触碰 Agent 注册表。`skill.list` 服务于浏览器中由用户选择的模型引用路径，因此仅返回模型和用户均可调用的 skill；该领域没有直接加载 skill 的 RPC。`command.execute` 在宿主侧运行一条斜杠命令行，语义为纯准入：响应报告该行是否解析到处理器，并在解析到时回带铸造的生命周期 `commandId`（将本次确认与流节点关联）；结局经由持久落账并在 mux 流广播的 `command/run`/`command/done` 生命周期事件对承载。命令处理器运行超过 30 秒的传输健康时限仍属正常，因此 `command.execute` 仅携带调用方／连接取消信号；该信号可取消正在运行的处理器。`host/commands-changed` 是目录失效帧：客户端重新拉取 `command.list` 而不是做差分。
+ `settings.*`、`credentials.*` 与 `llm.*` 领域是配置页协议。settings 领域服务于已注册可配置提供方所指向的 namespace（`ctx.llm.listConfigurableProviders()`），并额外服务于一份小型、显式的 allowlist——Web 偏好 `permission` 与产品持有的 `ui-onboarding`；仅新增一项 Settings 注册，绝不会使其可被远程读取或写入。其他任何 namespace 都只会得到 `settings-not-exposed`——未注册的 namespace 得到的是同一个答复，因此没有调用方能靠逐个探测把注册表枚举出来。`settings.describe` 为每个已暴露 namespace 提供其序列化 schemastery schema、脱敏后的分层值（resolved/`base`/`user`——字段出现在 `user` 中即标记其被用户覆盖）、`secrets` 槽位列表、该分节的 `revision`，以及布尔型 `hasDocument` 能力标志。浏览器不会收到 Host 路径：无路径参数的 `settings.openDocument` 会请求提供方准备文档，再把由 Host 解析出的结果交给原生打开器，因此任何浏览器载荷都无法选择任意文件系统目标。`settings.update`/`settings.replace` 写入用户层；`settings.mutate` 则在已存分节上施加路径 op（`set`/`unset`），这是持有脱敏视图的客户端的删除路径——据此重建分节再整体替换，会删掉协议从未回传过的那些机密。任何写入都可携带 `expectedRevision`；陈旧的期望值会以 `settings-conflict` 连同两个 revision 作答，而不是覆盖先落地的那个写方，其余每种 seam 拒绝则折叠为 `settings-rejected`。secret 角色的值绝不在任何一层搭乘任何响应；secret 只沿一个方向跨越协议——在 `update`/`mutate` 载荷或 `credentials.set` 之内。`credentials.describe` 返回不含值的视图（`configured`/`source`/`writable`），`credentials.set`/`credentials.unset` 则把被遮蔽引用的拒绝映射为 `credential-rejected`。`llm.providers` 把可配置提供方目录与存活路由合并（休眠条目携带 `active: false`；未声明的存活路由追加在后，不带 settings 地址），`llm.models` 则是与会话无关的目录。`llm.discoverModels` 询问页面尚在起草的提供方端点：`settingsNs` 选出懂得读取该列表的适配器家族，端点、协议与密钥则来自表单而非存储。它什么都不写——回复是候选，只有随后的 `settings.mutate` 才决定路由服务什么——因此其 `apiKey` 是 secret 可以搭乘的第三个、也是最后一个载荷（另两个是 `settings.update`/`mutate` 与 `credentials.set`），且绝不被存储或回显。host 从不存储或回传它；与另两者一样，它确实会搭乘客户端的出站信封，`subscribeEnvelopes()` 的观察者能看到——为该 tap 做脱敏是整个配置面的改动，而非本方法一家的事。每一种拒绝（无人服务的 namespace、没有可读列表的协议、不可达端点、被拒凭据）都折叠为 `model-discovery-failed`，其消息是适配器自己的文本，details 点名被询问的端点，绝不点名所提供的凭据。三个失效帧让每个面无需轮询即保持收敛：`host/settings-changed {ns}`（`settings/document-updated` 透传，因此解析值未变的原始变更同样能到达客户端）、`host/credentials-changed {ref}`（只带引用名，绝不带值），以及 `host/models-changed`——它由 `llm/adapters-updated` 和可配置提供方 namespace 的变更触发，因为该提供方的设置正承载着它的目录与端点；`permission` 或 `ui-onboarding` 变更只会发出自身的 settings 失效通知。浏览器载体把整个配置面（含读取与原生操作：`settings.describe`/`openDocument`/`update`/`replace`/`mutate` 与 `credentials.describe`/`set`/`unset`）限制为仅接受来自回环地址的同源请求——即 `host.pickDirectory` 所在的特权集合。未装 settings 或凭据 provider 的组合会以指名缺失插件、包含解决建议的 `internal` 错误应答这些领域。
  
--`settings.*`、`credentials.*` 与 `llm.*` 领域是配置页协议。settings 领域服务于已注册可配置提供方所指向的 namespace（`ctx.llm.listConfigurableProviders()`），并额外服务于一份小型、显式的 allowlist——Web 偏好 `permission` 与产品持有的 `ui-onboarding`；仅新增一项 Settings 注册，绝不会使其可被远程读取或写入。其他任何 namespace 都只会得到 `settings-not-exposed`——未注册的 namespace 得到的是同一个答复，因此没有调用方能靠逐个探测把注册表枚举出来。`settings.describe` 为每个已暴露 namespace 提供其序列化 schemastery schema、脱敏后的分层值（resolved/`base`/`user`——字段出现在 `user` 中即标记其被用户覆盖）、`secrets` 槽位列表，以及该分节的 `revision`。`settings.update`/`settings.replace` 写入用户层；`settings.mutate` 则在已存分节上施加路径 op（`set`/`unset`），这是持有脱敏视图的客户端的删除路径——据此重建分节再整体替换，会删掉协议从未回传过的那些机密。任何写入都可携带 `expectedRevision`；过期的期望值会以 `settings-conflict` 连同两个 revision 作答，而不是覆盖先落地的那个写方，其余每种 seam 拒绝则折叠为 `settings-rejected`。secret 角色的值绝不在任何一层搭乘任何响应；secret 只沿一个方向跨越协议——在 `update`/`mutate` 载荷或 `credentials.set` 之内。`credentials.describe` 返回不含值的视图（`configured`/`source`/`writable`），`credentials.set`/`credentials.unset` 则把被遮蔽引用的拒绝映射为 `credential-rejected`。`llm.providers` 把可配置提供方目录与存活路由合并（休眠条目携带 `active: false`；未声明的存活路由追加在后，不带 settings 地址），`llm.models` 则是与会话无关的目录。三个失效帧让每个面无需轮询即保持收敛：`host/settings-changed {ns}`（`settings/document-updated` 透传，因此解析值未变的原始变更同样能到达客户端）、`host/credentials-changed {ref}`（只带引用名，绝不带值），以及 `host/models-changed`——它由 `llm/adapters-updated` 和可配置提供方 namespace 的变更触发，因为该提供方的设置正承载着它的目录与端点；`permission` 或 `ui-onboarding` 变更只会发出自身的 settings 失效通知。浏览器载体把整个配置面（含读取：`settings.describe`/`update`/`replace`/`mutate` 与 `credentials.describe`/`set`/`unset`）限制为仅接受来自回环地址的同源请求——即 `host.pickDirectory` 所在的特权集合。未装 settings 或凭据 provider 的组合会以指名缺失插件、包含解决建议的 `internal` 错误应答这些领域。
-+`settings.*`、`credentials.*` 与 `llm.*` 领域是配置页协议。settings 领域服务于已注册可配置提供方所指向的 namespace（`ctx.llm.listConfigurableProviders()`）与一份小型显式 allowlist——Web 偏好 `permission` 与产品持有的 `ui-onboarding`。挂载 [web-config-crawler](../../../packages/host/web-config-crawler/README.md) 插件时，领域额外服务**每个**已注册 settings namespace——这是部署者对全自动配置界面的显式选择，插件无需任何接入动作。未挂载爬取器时，仅新增一项 Settings 注册绝不会使其可被远程读取或写入。其他任何 namespace 都只会得到 `settings-not-exposed`——未注册的 namespace 得到的是同一个答复，因此没有调用方能靠逐个探测把注册表枚举出来。`composition.*` 领域同样依赖爬取器：`composition.describe` 列出每个组合行携带 `Config` schema 的挂载插件（脱敏），`composition.update` 在宿主侧对插件当前解析配置施加路径 op 并把完整行持久化进个人 overlay，`composition.remove` 删除 overlay 行使下次启动回退到更低层。未挂载爬取器时该领域回答可操作的 `internal` 错误；写入拒绝映射为 `composition-rejected {id}`。`settings.describe` 为每个已暴露 namespace 提供其序列化 schemastery schema、脱敏后的分层值（resolved/`base`/`user`——字段出现在 `user` 中即标记其被用户覆盖）、`secrets` 槽位列表，以及该分节的 `revision`。`settings.update`/`settings.replace` 写入用户层；`settings.mutate` 则在已存分节上施加路径 op（`set`/`unset`），这是持有脱敏视图的客户端的删除路径——据此重建分节再整体替换，会删掉协议从未回传过的那些机密。任何写入都可携带 `expectedRevision`；过期的期望值会以 `settings-conflict` 连同两个 revision 作答，而不是覆盖先落地的那个写方，其余每种 seam 拒绝则折叠为 `settings-rejected`。secret 角色的值绝不在任何一层搭乘任何响应；secret 只沿一个方向跨越协议——在 `update`/`mutate` 载荷或 `credentials.set` 之内。`credentials.describe` 返回不含值的视图（`configured`/`source`/`writable`），`credentials.set`/`credentials.unset` 则把被遮蔽引用的拒绝映射为 `credential-rejected`。`llm.providers` 把可配置提供方目录与存活路由合并（休眠条目携带 `active: false`；未声明的存活路由追加在后，不带 settings 地址），`llm.models` 则是与会话无关的目录。三个失效帧让每个面无需轮询即保持收敛：`host/settings-changed {ns}`（`settings/document-updated` 透传，因此解析值未变的原始变更同样能到达客户端）、`host/credentials-changed {ref}`（只带引用名，绝不带值），以及 `host/models-changed`——它由 `llm/adapters-updated` 和可配置提供方 namespace 的变更触发，因为该提供方的设置正承载着它的目录与端点；`permission` 或 `ui-onboarding` 变更只会发出自身的 settings 失效通知。浏览器载体把整个配置面（含读取：`settings.describe`/`update`/`replace`/`mutate` 与 `credentials.describe`/`set`/`unset`）限制为仅接受来自回环地址的同源请求——即 `host.pickDirectory` 所在的特权集合。未装 settings 或凭据 provider 的组合会以指名缺失插件、包含解决建议的 `internal` 错误应答这些领域。
++挂载 [web-config-crawler](../../../packages/host/web-config-crawler/README.zh.md) 插件后，settings 领域还会服务每个已注册的 settings namespace；这是部署显式选择的全自动配置面。`composition.*` 领域复用同一 crawler：`composition.describe` 列出带有 Config schema 的插件行及其脱敏值，`composition.update` 在宿主侧执行路径寻址的操作并把完整行持久化到个人 overlay，`composition.remove` 删除 overlay 行并恢复下层配置。未挂载 crawler 时，这些领域返回可操作的错误；写入拒绝使用 `composition-rejected {id}`。settings、credentials 与 models 的变更都会发送失效帧，使浏览器投影无需轮询即可收敛。
++
++`subagent.*` 领域通过 `{parentSessionId, childSessionId}` 寻址直接子会话。`subagent.list` 投影持久化子会话目录，`subagent.history` 读取子会话日志但不恢复 Agent，`subagent.prompt` 仅在精确的活动父 Agent 可用时投递可继续执行的 follow-up。
++
+ ## 载体层（`/client` + 根路径）
  
- `subagent.*` 领域通过 `{parentSessionId, childSessionId}` 寻址直接 child。`subagent.list` 从 `ctx.subagents.listChildren` 投影包含 one-shot 与可继续条目的完整持久化目录、每个健康行基于 origin 分类的 `hasChildren` 提示，并把语料活动状态替换为确切 child Agent driver 的运行状态，同时提供确切 parent 是否存活的提示；`subagent.history` 先验证健康的直接 child 条目，再通过 `ctx.sessionQuery` 读取其持久化日志，且不恢复 Agent。`subagent.prompt` 只接受可继续地址，要求该确切 parent 已存活，通过 `ctx.subagents.followup()` 投递用户内容，以请求 `rpcId` 作为来源信息，并返回已接纳消息的 inbox `messageId`。类型化错误保留目录诊断、parent 可用性、可恢复性、授权和未投递等区别，同时不暴露对模型隐藏的继续执行描述符。见 [Web subagent 对话 Agent Note](../../../.agents/notes/implemented/feature/2026-07-27-web-subagent-conversations.md)。
- 
+ `AbstractApiClient` 持有全部协议不变量：签发 rpcId、包装／解包信封、Zod 解析、SSE 帧解码、一元请求超时，以及按微任务批处理的信封观测（`subscribeEnvelopes`）；平台子类只提供 `doFetch` 传输环节。`InProcessApiClient` 以 `toFetchHandler(api)` 为基础，是同构接点：它运行完整的协议序列化与校验路径而不经过网络，供 `dsh run` headless 模式使用。
 diff --git a/packages/host/apiproxy/package.json b/packages/host/apiproxy/package.json
-index 03f31c6a490b1d0fd7a2736a8101b6ab1fa95eef..5bfa780b25e9597dfd4203df7fff3174d01356ba 100644
+index 91d03b44487d37843f7719fc94c8680470c4adcc..b972c9ff80fb17d785a2f19b62c280bed6f913b4 100644
 --- a/packages/host/apiproxy/package.json
 +++ b/packages/host/apiproxy/package.json
-@@ -46,6 +46,7 @@
+@@ -45,6 +45,7 @@
      "@deepseek-ai/dsh-credentials": "workspace:^",
      "@deepseek-ai/dsh-goal": "workspace:^",
      "@deepseek-ai/dsh-host-directory-picker": "workspace:^",
@@ -899,7 +903,7 @@ index 03f31c6a490b1d0fd7a2736a8101b6ab1fa95eef..5bfa780b25e9597dfd4203df7fff3174
      "@deepseek-ai/dsh-native-command": "workspace:^",
      "@deepseek-ai/dsh-session": "workspace:^",
 diff --git a/packages/host/apiproxy/src/api-proxy.ts b/packages/host/apiproxy/src/api-proxy.ts
-index d7690d7ae67eb482aba0e424b23b8a8016c7c52a..58ac12262406befbcd16a046888661a198e6fe4c 100644
+index f621503e41431e32fd533e542631ed19f8a54326..82f2df3fbe5d29f4757409d31c947e37fd82b3e3 100644
 --- a/packages/host/apiproxy/src/api-proxy.ts
 +++ b/packages/host/apiproxy/src/api-proxy.ts
 @@ -53,6 +53,10 @@ import type {} from '@deepseek-ai/dsh-skill'
@@ -913,7 +917,7 @@ index d7690d7ae67eb482aba0e424b23b8a8016c7c52a..58ac12262406befbcd16a046888661a1
  import { credentialRef } from '@deepseek-ai/dsh-credentials'
  // Value edge: the rename impl narrows the title service's validation failure; the import also resolves `ctx.get('sessionTitle')`.
  import { SessionTitleInvalidError } from '@deepseek-ai/dsh-session-title'
-@@ -1407,6 +1411,11 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1327,6 +1331,11 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
      return { code: 'internal', message: 'credentials service is absent: this deployment does not mount a credential provider (e.g. @deepseek-ai/dsh-credentials-local) in its composition', details: {} }
    }
  
@@ -925,7 +929,7 @@ index d7690d7ae67eb482aba0e424b23b8a8016c7c52a..58ac12262406befbcd16a046888661a1
    /** Map one redacted seam descriptor to its wire view. */
    function namespaceView(descriptor: SettingsDescriptor): SettingsNamespaceView {
      return {
-@@ -1427,15 +1436,21 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1347,15 +1356,21 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
    }
  
    /**
@@ -951,7 +955,7 @@ index d7690d7ae67eb482aba0e424b23b8a8016c7c52a..58ac12262406befbcd16a046888661a1
      return exposed
    }
  
-@@ -2455,6 +2470,44 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2450,6 +2465,44 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
        mutate: request => settingsWrite(request, request.payload.ns, 'mutate', request.payload.ops, request.payload.expectedRevision),
      },
  
@@ -1127,7 +1131,7 @@ index 0000000000000000000000000000000000000000..4b20f53800082eb02e1751a95376d8af
 +  remove(request: RpcRequest<{ id: string }>): Promise<RpcResponse<{}>>
 +}
 diff --git a/packages/host/apiproxy/src/api/index.ts b/packages/host/apiproxy/src/api/index.ts
-index 8beeda582a0544b0cefe75c675074345cf574857..c018274abbb4875d055af928632339d38310e647 100644
+index cb83c5328dc929dd0280323791bfd94db06847df..005d099f4cbfdcca7695573c68994bba9b228e87 100644
 --- a/packages/host/apiproxy/src/api/index.ts
 +++ b/packages/host/apiproxy/src/api/index.ts
 @@ -13,6 +13,7 @@ import type { SubagentsApi } from './subagents.ts'
@@ -1153,9 +1157,9 @@ index 8beeda582a0544b0cefe75c675074345cf574857..c018274abbb4875d055af928632339d3
 +export type { CompositionApi, CompositionNamespaceView, CompositionSecretView } from './composition.ts'
  export type { SettingsApi, SettingsNamespaceView, SettingsPathOpView, SettingsSecretView } from './settings.ts'
  export type { CredentialsApi, CredentialView } from './credentials.ts'
- export type { ConfigurableProviderView, LlmApi } from './llm.ts'
+ export type { ConfigurableProviderView, DiscoveredModelView, LlmApi } from './llm.ts'
 diff --git a/packages/host/apiproxy/src/api/rpc-map.ts b/packages/host/apiproxy/src/api/rpc-map.ts
-index efcbb87d19d4e935aefb127e43eed5e9b53ae4a2..aeb3afc1d63e4f8ae8cf86f30093d800d002ce80 100644
+index 9a8750c72236bbfae17de462d983eebb6db08e14..710e5503b2789ed8827c2664a797733f91f8bca6 100644
 --- a/packages/host/apiproxy/src/api/rpc-map.ts
 +++ b/packages/host/apiproxy/src/api/rpc-map.ts
 @@ -11,6 +11,7 @@ import type { CommandsApi } from './commands.ts'
@@ -1174,16 +1178,16 @@ index efcbb87d19d4e935aefb127e43eed5e9b53ae4a2..aeb3afc1d63e4f8ae8cf86f30093d800
 +  'composition.update': CompositionApi['update']
 +  'composition.remove': CompositionApi['remove']
    'settings.describe': SettingsApi['describe']
+   'settings.openDocument': SettingsApi['openDocument']
    'settings.update': SettingsApi['update']
-   'settings.replace': SettingsApi['replace']
 diff --git a/packages/host/apiproxy/src/api/rpc.ts b/packages/host/apiproxy/src/api/rpc.ts
-index f435f23e936435de261eac139777f17f1f1f0987..d2757962944668eecd5452e3bd82c548f7971682 100644
+index 54bbb5a8cc11eab194a30a0b5d3740b9104c4f47..20676908c92e4ec1d69514b6a02f5a4e53e56081 100644
 --- a/packages/host/apiproxy/src/api/rpc.ts
 +++ b/packages/host/apiproxy/src/api/rpc.ts
-@@ -70,6 +70,11 @@ export interface RpcErrorDetailsMap {
-   'settings-conflict': { ns: string; expected: number; actual: number }
-   /** A credential write was refused (read-only shadowing layer or storage failure); the message is the seam's own text. */
-   'credential-rejected': { ref: string }
+@@ -79,6 +79,11 @@ export interface RpcErrorDetailsMap {
+    * details name the endpoint asked, never the credential offered.
+    */
+   'model-discovery-failed': { settingsNs: string; baseURL?: string }
 +  /**
 +   * A composition write was refused (unknown row, schema validation, or
 +   * overlay storage failure); the message is the crawler's text.
@@ -1193,12 +1197,12 @@ index f435f23e936435de261eac139777f17f1f1f0987..d2757962944668eecd5452e3bd82c548
    'fork-unavailable': { sessionId: SessionId }
    'subagent-parent-unavailable': { parentSessionId: SessionId }
 diff --git a/packages/host/apiproxy/src/fetch/client.ts b/packages/host/apiproxy/src/fetch/client.ts
-index 72aa45ffba8830a5bb2b5d8ad64e04bef71f8392..0e18deeeccf63f03e40d3b1011e316aaf59fbd15 100644
+index 67b25de801a1830695d1235c890d9e51276a8f12..b6e9bb6c6f0ca71ec0f8775665ea82d2478b3668 100644
 --- a/packages/host/apiproxy/src/fetch/client.ts
 +++ b/packages/host/apiproxy/src/fetch/client.ts
-@@ -51,6 +51,9 @@ import {
- import {
-   settingsDescribeValueSchema, settingsMutateValueSchema, settingsReplaceValueSchema, settingsUpdateValueSchema,
+@@ -52,6 +52,9 @@ import {
+   settingsDescribeValueSchema, settingsMutateValueSchema, settingsOpenDocumentValueSchema,
+   settingsReplaceValueSchema, settingsUpdateValueSchema,
  } from '../api/settings.schema.ts'
 +import {
 +  compositionDescribeValueSchema, compositionRemoveValueSchema, compositionUpdateValueSchema,
@@ -1206,7 +1210,7 @@ index 72aa45ffba8830a5bb2b5d8ad64e04bef71f8392..0e18deeeccf63f03e40d3b1011e316aa
  import {
    credentialsDescribeValueSchema, credentialsSetValueSchema, credentialsUnsetValueSchema,
  } from '../api/credentials.schema.ts'
-@@ -136,6 +139,11 @@ export interface IApiClient {
+@@ -138,6 +141,11 @@ export interface IApiClient {
      replace(payload: RequestPayload<'settings.replace'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'settings.replace'>>>
      mutate(payload: RequestPayload<'settings.mutate'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'settings.mutate'>>>
    }
@@ -1218,7 +1222,7 @@ index 72aa45ffba8830a5bb2b5d8ad64e04bef71f8392..0e18deeeccf63f03e40d3b1011e316aa
    credentials: {
      describe(payload: RequestPayload<'credentials.describe'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'credentials.describe'>>>
      set(payload: RequestPayload<'credentials.set'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'credentials.set'>>>
-@@ -188,6 +196,9 @@ const UNARY_VALUE_SCHEMAS: { [K in keyof RpcMethodMap]: z.ZodType<Wire<ResponseV
+@@ -191,6 +199,9 @@ const UNARY_VALUE_SCHEMAS: { [K in keyof RpcMethodMap]: z.ZodType<Wire<ResponseV
    'goal.resume': goalResumeValueSchema,
    'goal.complete': goalCompleteValueSchema,
    'goal.clear': goalClearValueSchema,
@@ -1226,9 +1230,9 @@ index 72aa45ffba8830a5bb2b5d8ad64e04bef71f8392..0e18deeeccf63f03e40d3b1011e316aa
 +  'composition.update': compositionUpdateValueSchema,
 +  'composition.remove': compositionRemoveValueSchema,
    'settings.describe': settingsDescribeValueSchema,
+   'settings.openDocument': settingsOpenDocumentValueSchema,
    'settings.update': settingsUpdateValueSchema,
-   'settings.replace': settingsReplaceValueSchema,
-@@ -454,6 +465,12 @@ export abstract class AbstractApiClient implements IApiClient {
+@@ -460,6 +471,12 @@ export abstract class AbstractApiClient implements IApiClient {
      mutate: (payload, signal) => this.callUnary('settings.mutate', payload, signal),
    }
  
@@ -1242,12 +1246,12 @@ index 72aa45ffba8830a5bb2b5d8ad64e04bef71f8392..0e18deeeccf63f03e40d3b1011e316aa
      describe: (payload, signal) => this.callUnary('credentials.describe', payload, signal),
      set: (payload, signal) => this.callUnary('credentials.set', payload, signal),
 diff --git a/packages/host/apiproxy/src/fetch/handler.ts b/packages/host/apiproxy/src/fetch/handler.ts
-index 0c0485f59dbf5db22c99189a8edc2b9487572b00..84310aac525ab9c3b8a4350eabec340ac86b4c7e 100644
+index 2b30e3fe07eee00e7c2d32e87005eaa605815ef3..f43bae264a04f79a52f5444817209bde99bb27b5 100644
 --- a/packages/host/apiproxy/src/fetch/handler.ts
 +++ b/packages/host/apiproxy/src/fetch/handler.ts
-@@ -53,6 +53,9 @@ import {
- import {
-   settingsDescribeRequestSchema, settingsMutateRequestSchema, settingsReplaceRequestSchema, settingsUpdateRequestSchema,
+@@ -54,6 +54,9 @@ import {
+   settingsDescribeRequestSchema, settingsMutateRequestSchema, settingsOpenDocumentRequestSchema,
+   settingsReplaceRequestSchema, settingsUpdateRequestSchema,
  } from '../api/settings.schema.ts'
 +import {
 +  compositionDescribeRequestSchema, compositionRemoveRequestSchema, compositionUpdateRequestSchema,
@@ -1263,13 +1267,13 @@ index 0c0485f59dbf5db22c99189a8edc2b9487572b00..84310aac525ab9c3b8a4350eabec340a
 +  'composition.update': { schema: compositionUpdateRequestSchema, invoke: (api, r) => api.composition.update(r) },
 +  'composition.remove': { schema: compositionRemoveRequestSchema, invoke: (api, r) => api.composition.remove(r) },
    'settings.describe': { schema: settingsDescribeRequestSchema, invoke: (api, r) => api.settings.describe(r) },
+   'settings.openDocument': { schema: settingsOpenDocumentRequestSchema, invoke: (api, r, signal) => api.settings.openDocument(r, signal) },
    'settings.update': { schema: settingsUpdateRequestSchema, invoke: (api, r) => api.settings.update(r) },
-   'settings.replace': { schema: settingsReplaceRequestSchema, invoke: (api, r) => api.settings.replace(r) },
 diff --git a/packages/host/apiproxy/src/index.ts b/packages/host/apiproxy/src/index.ts
-index e279575ff4055e9f4e5db8d3d7e7532f5c7c2a8a..06c8ace1346f0f454591b919c74fc470891dec7f 100644
+index 1a6e0be28185a66210c582ccb502a5045d1202d2..bd5fe094831347e4b7fc2fb5c70d264f2fcfeeb9 100644
 --- a/packages/host/apiproxy/src/index.ts
 +++ b/packages/host/apiproxy/src/index.ts
-@@ -64,6 +64,7 @@ export class ApiProxyService extends Service implements ApiProxy {
+@@ -119,6 +119,7 @@ export class ApiProxyService extends Service implements ApiProxy {
    readonly goals: ApiProxy['goals']
    readonly skills: ApiProxy['skills']
    readonly settings: ApiProxy['settings']
@@ -1277,7 +1281,7 @@ index e279575ff4055e9f4e5db8d3d7e7532f5c7c2a8a..06c8ace1346f0f454591b919c74fc470
    readonly credentials: ApiProxy['credentials']
    readonly llm: ApiProxy['llm']
    readonly events: ApiProxy['events']
-@@ -86,6 +87,7 @@ export class ApiProxyService extends Service implements ApiProxy {
+@@ -162,6 +163,7 @@ export class ApiProxyService extends Service implements ApiProxy {
      this.goals = api.goals
      this.skills = api.skills
      this.settings = api.settings
@@ -1286,7 +1290,7 @@ index e279575ff4055e9f4e5db8d3d7e7532f5c7c2a8a..06c8ace1346f0f454591b919c74fc470
      this.llm = api.llm
      this.events = api.events
 diff --git a/packages/host/apiproxy/tests/api-proxy-config.spec.ts b/packages/host/apiproxy/tests/api-proxy-config.spec.ts
-index 7e90d57fb66df94e5f968947bbfd0c071ae59fbc..21c89c8c38fa739e4991e818ce9b66e5b6f62afb 100644
+index c74f378bb4e806e2397560ac0179536112bcc794..03583ee8b9bb3b82226dd9b3c72bbdef0f73cb03 100644
 --- a/packages/host/apiproxy/tests/api-proxy-config.spec.ts
 +++ b/packages/host/apiproxy/tests/api-proxy-config.spec.ts
 @@ -19,10 +19,11 @@ import { Settings, settingsNamespace } from '@deepseek-ai/dsh-settings'
@@ -1297,12 +1301,12 @@ index 7e90d57fb66df94e5f968947bbfd0c071ae59fbc..21c89c8c38fa739e4991e818ce9b66e5
 +import type { HostFrame, SettingsPathOpView } from '../src/api/index.ts'
  import type { RpcRequest, RpcResponse } from '../src/api/rpc.ts'
  import { RpcId } from '../src/api/rpc.ts'
- import { createApiProxy } from '../src/api-proxy.ts'
+ import { API_GATEWAY_SETTINGS_NAMESPACE, createApiProxy } from '../src/api-proxy.ts'
 +import * as Crawler from '@deepseek-ai/dsh-host-web-config-crawler'
  
- const DEFAULTS = { provider: 'p', model: 'm', cwd: '/tmp', workspaceRoot: '/tmp' }
+ const DEFAULTS = { defaultTarget: () => ({ provider: 'p', model: 'm' }), cwd: '/tmp', workspaceRoot: '/tmp' }
  
-@@ -258,6 +259,28 @@ describe('settings domain', () => {
+@@ -340,6 +341,28 @@ describe('settings domain', () => {
      expect(ctx.settings.describe().find(d => String(d.ns) === 'some-other-plugin')?.value).toEqual({})
    })
  
@@ -1331,7 +1335,7 @@ index 7e90d57fb66df94e5f968947bbfd0c071ae59fbc..21c89c8c38fa739e4991e818ce9b66e5
    it('serves the product onboarding namespace without invalidating the model catalog', async () => {
      const ctx = await harness()
      ctx.settings.register(settingsNamespace('ui-onboarding'), z.object({ welcomeNoticeVersion: z.string() }))
-@@ -392,6 +415,58 @@ describe('settings domain', () => {
+@@ -493,6 +516,58 @@ describe('settings domain', () => {
    })
  })
  
@@ -1391,10 +1395,10 @@ index 7e90d57fb66df94e5f968947bbfd0c071ae59fbc..21c89c8c38fa739e4991e818ce9b66e5
    it('reports an actionable error when no credential provider is mounted', async () => {
      const ctx = await harness({ credentials: false })
 diff --git a/packages/host/apiproxy/tests/client-handler.spec.ts b/packages/host/apiproxy/tests/client-handler.spec.ts
-index 7d73759f0c3b3b6d06fcb86f596591fa91ab237d..ca940d9b9146b475d16f7e8cc2cfc6070de2c75c 100644
+index ebd56ee551b85924caf5436f9968f5c689136a82..108b312001d96136c4057eec4bb929aa5fd27e3a 100644
 --- a/packages/host/apiproxy/tests/client-handler.spec.ts
 +++ b/packages/host/apiproxy/tests/client-handler.spec.ts
-@@ -95,6 +95,11 @@ function scriptedApi(overrides: {
+@@ -96,6 +96,11 @@ function scriptedApi(overrides: {
        clear: err,
        ...overrides.goals,
      },
@@ -1404,13 +1408,13 @@ index 7d73759f0c3b3b6d06fcb86f596591fa91ab237d..ca940d9b9146b475d16f7e8cc2cfc607
 +      remove: async () => ({ rpcId: 'c' as never, result: { ok: true as const, value: {} } }),
 +    },
      settings: {
-       describe: r => ok(r, { writable: true, namespaces: [] }),
-       update: err,
+       describe: r => ok(r, { writable: true, hasDocument: false, namespaces: [] }),
+       openDocument: r => ok(r, { opened: true as const }),
 diff --git a/packages/host/apiproxy/tests/fetch-carrier.spec.ts b/packages/host/apiproxy/tests/fetch-carrier.spec.ts
-index 2ca2f94647c881153eb3297ec77cff3fd73bbc61..f8d7e45eec46e96d92c8106a68414a75aafd15b4 100644
+index 5289edf833e95a1ba153b868559b5408a4c0fdc1..805eb2c7874dad8d67a35abd85a80e22364b997b 100644
 --- a/packages/host/apiproxy/tests/fetch-carrier.spec.ts
 +++ b/packages/host/apiproxy/tests/fetch-carrier.spec.ts
-@@ -218,6 +218,14 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
+@@ -219,6 +219,14 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
          return { rpcId: request.rpcId, result: { ok: false, error: { code: 'internal', message: 'stub', details: {} } } }
        },
      },
@@ -1424,8 +1428,8 @@ index 2ca2f94647c881153eb3297ec77cff3fd73bbc61..f8d7e45eec46e96d92c8106a68414a75
 +    },
      settings: {
        async describe(request) {
-         return { rpcId: request.rpcId, result: { ok: true, value: { writable: true, namespaces: [] } } }
-@@ -330,6 +338,19 @@ describe('unary round trip (handler ⇄ client, no network)', () => {
+         return { rpcId: request.rpcId, result: { ok: true, value: { writable: true, hasDocument: false, namespaces: [] } } }
+@@ -337,6 +345,19 @@ describe('unary round trip (handler ⇄ client, no network)', () => {
      expect((await c.host.describe({})).result.ok).toBe(true)
    })
  
@@ -1446,10 +1450,10 @@ index 2ca2f94647c881153eb3297ec77cff3fd73bbc61..f8d7e45eec46e96d92c8106a68414a75
      const api = fakeApi()
      api.host.pickDirectory = async (request) => {
 diff --git a/packages/host/apiproxy/tsconfig.json b/packages/host/apiproxy/tsconfig.json
-index c648d7a30d2e7947daa0572aac162af30a3d1a0d..8a82a98e2112cae470c4e85ff943c5d5414111f7 100644
+index 8686a9e4687e5ef9e6bc2333821bf27fd51ab86e..732220d96262dd9451a3e6314ab1e4e7d6d92a51 100644
 --- a/packages/host/apiproxy/tsconfig.json
 +++ b/packages/host/apiproxy/tsconfig.json
-@@ -77,6 +77,9 @@
+@@ -80,6 +80,9 @@
      {
        "path": "../directory-picker"
      },
@@ -1460,10 +1464,10 @@ index c648d7a30d2e7947daa0572aac162af30a3d1a0d..8a82a98e2112cae470c4e85ff943c5d5
        "path": "../../support/invariants"
      },
 diff --git a/scripts/verify-package-readme-model-experience.ts b/scripts/verify-package-readme-model-experience.ts
-index 4104ff8fdcf959cc9e1adeedafd71a7fa6260504..fb05941b695dceb9952628290735faad30654b78 100644
+index 3ca0317cf44e4fd78ee89d9fde18257a1466dd0b..1e4940ded34d9a3f086c0255cb77eeff6b437c20 100644
 --- a/scripts/verify-package-readme-model-experience.ts
 +++ b/scripts/verify-package-readme-model-experience.ts
-@@ -71,6 +71,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
+@@ -77,6 +77,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
    'packages/client/ui-theme': { kind: 'none', reason: 'Browser-side UI plugin layer; registers no model surface.' },
    'packages/client/ui-settings': { kind: 'none', reason: 'Browser-side UI plugin layer; registers no model surface.' },
    'packages/client/ui-settings-general': { kind: 'none', reason: 'Browser-side UI plugin layer; registers no model surface.' },
@@ -1471,19 +1475,19 @@ index 4104ff8fdcf959cc9e1adeedafd71a7fa6260504..fb05941b695dceb9952628290735faad
    'packages/client/ui-models': { kind: 'none', reason: 'Browser-side UI plugin layer; registers no model surface.' },
    'packages/client/locale': { kind: 'none', reason: 'Browser-side UI plugin layer; registers no model surface.' },
    'packages/client/web': { kind: 'none', reason: 'Browser-side UI plugin layer; registers no model surface.' },
-@@ -83,6 +84,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
+@@ -89,6 +90,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
    'packages/host/directory-picker-auto': { kind: 'none', reason: 'The GUI-host picking chooser only mounts a backend row; registers no model surface.' },
    'packages/host/directory-picker-browse': { kind: 'none', reason: 'The GUI-host picking backend registers no model surface.' },
    'packages/host/directory-picker-native': { kind: 'none', reason: 'The GUI-host picking backend registers no model surface.' },
 +  'packages/host/web-config-crawler': { kind: 'none', reason: 'The configuration crawler registers no model surface.' },
    'packages/host/webserver': { kind: 'none', reason: 'The HTTP carrier bridges browser and API handler and registers no model surface.' },
-   'packages/llm/llm': { kind: 'none', reason: 'The adapter registry forwards already-assembled requests unchanged.' },
-   'packages/llm/token-meter': { kind: 'indirect', reason: 'The measurement service leaves model-visible changes to its consumers.' },
+   'packages/host/frontend-static': { kind: 'none', reason: 'The SPA dist server answers browser asset requests and registers no model surface.' },
+   'packages/bundle/base': { kind: 'indirect', reason: 'The bundle is a patch-list carrier; each inserted row\'s package owns its model surface.' },
 diff --git a/tsconfig.base.json b/tsconfig.base.json
-index 43c643d9c202228914b4abf98eefaacacb97b1d1..a7bed7dd73a355604f0c493a6f90dee2dfb68650 100644
+index de9b63459cdaef91fd2afee19f05525fc99f46f4..7b74e70e82e62758b34c23e5afc173da4993ecf6 100644
 --- a/tsconfig.base.json
 +++ b/tsconfig.base.json
-@@ -127,6 +127,7 @@
+@@ -139,6 +139,7 @@
        "@deepseek-ai/dsh-host-directory-picker/*": ["./packages/host/directory-picker/src/*"],
        "@deepseek-ai/dsh-host-directory-picker-browse": ["./packages/host/directory-picker-browse/src"],
        "@deepseek-ai/dsh-host-directory-picker-browse/*": ["./packages/host/directory-picker-browse/src/*"],
@@ -1491,7 +1495,7 @@ index 43c643d9c202228914b4abf98eefaacacb97b1d1..a7bed7dd73a355604f0c493a6f90dee2
        "@deepseek-ai/dsh-host-directory-picker-native": ["./packages/host/directory-picker-native/src"],
        "@deepseek-ai/dsh-host-directory-picker-native/*": ["./packages/host/directory-picker-native/src/*"],
        "@deepseek-ai/dsh-host-directory-picker-auto": ["./packages/host/directory-picker-auto/src"],
-@@ -162,6 +163,7 @@
+@@ -178,6 +179,7 @@
        "@deepseek-ai/dsh-client-ui-theme": ["./packages/client/ui-theme/src"],
        "@deepseek-ai/dsh-client-ui-settings": ["./packages/client/ui-settings/src"],
        "@deepseek-ai/dsh-client-ui-settings-general": ["./packages/client/ui-settings-general/src"],
@@ -1500,10 +1504,10 @@ index 43c643d9c202228914b4abf98eefaacacb97b1d1..a7bed7dd73a355604f0c493a6f90dee2
        "@deepseek-ai/dsh-client-locale": ["./packages/client/locale/src"],
        "@deepseek-ai/dsh-client-web": ["./packages/client/web/src"],
 diff --git a/tsconfig.client.json b/tsconfig.client.json
-index e1d4088061a10f5146ad1c7791c0477c53732cd4..73327191578dae73525ad3146ced1a6c508bfa16 100644
+index 9ce72753c10680f2a3a4f36687608059f4ae023b..73c3d4dc43203289242ffdc8c92906867f5a963a 100644
 --- a/tsconfig.client.json
 +++ b/tsconfig.client.json
-@@ -70,6 +70,7 @@
+@@ -75,6 +75,7 @@
      { "path": "./packages/client/ui-theme" },
      { "path": "./packages/client/ui-settings" },
      { "path": "./packages/client/ui-settings-general" },
@@ -1512,10 +1516,10 @@ index e1d4088061a10f5146ad1c7791c0477c53732cd4..73327191578dae73525ad3146ced1a6c
      { "path": "./packages/client/locale" },
      { "path": "./packages/client/web" },
 diff --git a/tsconfig.host.json b/tsconfig.host.json
-index bfc4f898e850877cd54ac75760ac05bb048acc5f..fd46e2a83f3355b6e2b5818ae37b26ec06867a49 100644
+index 6641a505b93417a51ab9bc96bf14736b913e2487..a7780451d4b4869f71bc00246c3f7ee48736cca5 100644
 --- a/tsconfig.host.json
 +++ b/tsconfig.host.json
-@@ -214,6 +214,7 @@
+@@ -244,6 +244,7 @@
      { "path": "./packages/host/apiproxy" },
      { "path": "./packages/host/directory-picker" },
      { "path": "./packages/host/directory-picker-auto" },
