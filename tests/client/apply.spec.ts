@@ -2,11 +2,16 @@
 import { Context } from 'cordis'
 import { describe, expect, it, vi } from 'vitest'
 import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
-import { SlotsService } from '@deepseek-ai/dsh-client-runtime/client'
-import { LocaleService } from '@deepseek-ai/dsh-client-locale/client'
+import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
+import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
+import { TestRemote } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject } from '@deepseek-ai/dsh-ex-setting/client'
 import type { PluginSettingsSectionInjected } from '../../src/client/PluginSettingsSection.tsx'
+import { crawlerCompositionApi } from '../../src/client/crawler-api.ts'
+import type { CrawlerCompositionApi } from '../../src/client/crawler-api.ts'
+
+vi.mock('../../src/client/crawler-api.ts', () => ({ crawlerCompositionApi: vi.fn() }))
 
 usePinnedBrowserLanguages('zh-CN')
 
@@ -45,62 +50,47 @@ function settingsResponse(namespaces: SettingsView[]) {
   }
 }
 
-function compositionResponse(namespaces: CompositionView[]) {
-  return {
-    rpcId: 'settings-plugins' as never,
-    result: { ok: true as const, value: { namespaces } },
-  }
-}
-
 async function bench(options: {
   settingsDescribe?: ReturnType<typeof vi.fn>
-  compositionDescribe?: ReturnType<typeof vi.fn>
+  compositionDescribe?: CrawlerCompositionApi['describe']
 } = {}) {
   const ctx = new Context()
-  await ctx.plugin(SlotsService).await()
-  const locale = new LocaleService(ctx)
+  await ctx.plugin(SlotRegistry).await()
+  const locale = new LocaleRuntime(ctx)
   ctx.provide('locale', locale)
+  // The plugin injects `remote`; forwarded events reach it through the
+  // same `$dispatch` handoff the connection sink makes.
+  new TestRemote(ctx)
   const settingsDescribe = options.settingsDescribe ?? vi.fn(() =>
     Promise.resolve(settingsResponse([settingsView('some-plugin')])))
-  const compositionDescribe = options.compositionDescribe ?? vi.fn(() =>
-    Promise.resolve(compositionResponse([])))
   const settingsMutate = vi.fn(() => Promise.resolve({
     rpcId: 'settings-plugins' as never,
     result: { ok: true as const, value: settingsView('some-plugin') },
   }))
-  const compositionUpdate = vi.fn(() => Promise.resolve({
-    rpcId: 'settings-plugins' as never,
-    result: { ok: true as const, value: compositionView('session') },
-  }))
-  const compositionRemove = vi.fn(() => Promise.resolve({
-    rpcId: 'settings-plugins' as never,
-    result: { ok: true as const, value: {} },
-  }))
+  const crawler: CrawlerCompositionApi = {
+    describe: options.compositionDescribe ?? (async () => []),
+    update: vi.fn(async () => compositionView('session')),
+    remove: vi.fn(async () => {}),
+  }
+  vi.mocked(crawlerCompositionApi).mockReturnValue(crawler)
   ctx.provide('connection', {
     api: {
       settings: { describe: settingsDescribe, mutate: settingsMutate },
-      composition: {
-        describe: compositionDescribe,
-        update: compositionUpdate,
-        remove: compositionRemove,
-      },
     },
     isLoopback: true,
   } as never)
   return {
     ctx,
-    slots: ctx.get('slots') as SlotsService,
+    slots: ctx.get('slots') as SlotRegistry,
     locale,
     settingsDescribe,
-    compositionDescribe,
     settingsMutate,
-    compositionUpdate,
-    compositionRemove,
+    crawler,
   }
 }
 
 /** Declare the shell's section slot the way ui-settings does. */
-function declare(slots: SlotsService): () => void {
+function declare(slots: SlotRegistry): () => void {
   return slots.register(
     {
       name: 'root',
@@ -110,28 +100,46 @@ function declare(slots: SlotsService): () => void {
   )
 }
 
-function dynamicEntries(slots: SlotsService) {
+function dynamicEntries(slots: SlotRegistry) {
   return slots.entries(SEAT).filter(entry => entry.options.id?.startsWith('plugin:') === true)
 }
 
-function dynamicIds(slots: SlotsService): Array<string | undefined> {
+function dynamicIds(slots: SlotRegistry): Array<string | undefined> {
   return dynamicEntries(slots).map(entry => entry.options.id)
 }
 
-function dynamicEntry(slots: SlotsService, id: string) {
+function dynamicEntry(slots: SlotRegistry, id: string) {
   return dynamicEntries(slots).find(entry => entry.options.id === id)
 }
 
 describe('ui-settings-plugins apply', () => {
   it('declares the services it uses', () => {
-    expect(inject).toEqual(['slots', 'locale', 'connection'])
+    expect(inject).toEqual(['slots', 'locale', 'connection', 'remote'])
+  })
+
+  it('registers the nav-scroll patch when the browser Fabric runtime is mounted', async () => {
+    const b = await bench()
+    declare(b.slots)
+    const register = vi.fn(() => 'web-config-crawler/nav-scroll')
+    b.ctx.provide('fabric', { register } as never)
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    expect(register).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'web-config-crawler/nav-scroll',
+      operation: 'before',
+      target: {
+        module: '@deepseek-ai/dsh-client-ui-settings-general',
+        versionRange: '>=0.0.1-0',
+        filePath: 'lib/client.js',
+        functionQuery: { functionName: 'SettingsRoot', kind: 'Sync' },
+      },
+    }))
   })
 
   it('automatically registers one first-level entry per crawler source before or after declaration', async () => {
-    const compositionDescribe = vi.fn(() => Promise.resolve(compositionResponse([
+    const compositionDescribe = vi.fn(() => Promise.resolve([
       compositionView('some-plugin', 'some-plugin'),
       compositionView('session', 'Session service'),
-    ])))
+    ]))
     const before = await bench({ compositionDescribe })
     declare(before.slots)
     await before.ctx.plugin({ inject: [...inject], apply }).await()
@@ -145,9 +153,9 @@ describe('ui-settings-plugins apply', () => {
     const settings = dynamicEntry(before.slots, 'plugin:settings:some-plugin')!
     const composition = dynamicEntry(before.slots, 'plugin:composition:session')!
     const sameIdComposition = dynamicEntry(before.slots, 'plugin:composition:some-plugin')!
-    expect(settings.options).toMatchObject({ order: 20, label: 'some-plugin' })
-    expect(composition.options).toMatchObject({ order: 20, label: 'Session service' })
-    expect(sameIdComposition.options).toMatchObject({ order: 20, label: 'some-plugin · Config' })
+    expect(settings.options).toMatchObject({ order: 30, label: 'some-plugin' })
+    expect(composition.options).toMatchObject({ order: 30, label: 'Session service' })
+    expect(sameIdComposition.options).toMatchObject({ order: 30, label: 'some-plugin · Config' })
     expect(new Set([settings.component, composition.component, sameIdComposition.component]).size).toBe(3)
     expect(settings.locale).toBe('settings-plugins')
     expect(before.slots.entries(SEAT).some(entry => entry.options.id === 'plugins')).toBe(false)
@@ -165,8 +173,10 @@ describe('ui-settings-plugins apply', () => {
     await injected.updateComposition(compositionPayload, signal)
     await injected.removeComposition(removePayload, signal)
     expect(before.settingsMutate).toHaveBeenCalledWith(settingsPayload, signal)
-    expect(before.compositionUpdate).toHaveBeenCalledWith(compositionPayload, signal)
-    expect(before.compositionRemove).toHaveBeenCalledWith(removePayload, signal)
+    const { update: crawlerUpdate, remove: crawlerRemove } =
+      before.crawler as unknown as { update: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> }
+    expect(crawlerUpdate).toHaveBeenCalledWith(compositionPayload.id, compositionPayload.ops)
+    expect(crawlerRemove).toHaveBeenCalledWith(removePayload.id)
 
     const after = await bench({ compositionDescribe })
     const fiber = after.ctx.plugin({ inject: [...inject], apply })
@@ -239,7 +249,7 @@ describe('ui-settings-plugins apply', () => {
     })
     const alpha = dynamicEntry(b.slots, 'plugin:settings:alpha')
     wire.namespaces = [settingsView('alpha', 1), settingsView('gamma')]
-    b.ctx.emit('settings/changed', 'alpha')
+    b.ctx.remote.$dispatch('settings/document-updated', ['alpha', 1])
     await vi.waitFor(() => {
       expect(dynamicIds(b.slots)).toEqual(['plugin:settings:alpha', 'plugin:settings:gamma'])
     })
@@ -259,7 +269,7 @@ describe('ui-settings-plugins apply', () => {
 
   it('re-registers a composition entry whose unique display name changes', async () => {
     let rows = [compositionView('session', 'Session')]
-    const compositionDescribe = vi.fn(() => Promise.resolve(compositionResponse(rows)))
+    const compositionDescribe = vi.fn(() => Promise.resolve(rows))
     const b = await bench({
       settingsDescribe: vi.fn(() => Promise.resolve(settingsResponse([]))),
       compositionDescribe,

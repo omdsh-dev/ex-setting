@@ -3,8 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import z from 'schemastery'
 import type {
-  CompositionNamespaceView, IApiClient, SettingsNamespaceView,
+  IApiClient, SettingsNamespaceView,
 } from '@deepseek-ai/dsh-client-connection/client'
+import type { CompositionNamespaceView, CrawlerCompositionApi } from '../../src/client/crawler-api.ts'
 import {
   PluginSettingsSection, PluginSettingsStatusSection, createPluginSettingsSection, userOpsFor,
 } from '../../src/client/PluginSettingsSection.tsx'
@@ -67,7 +68,8 @@ function okResponse(namespace: SettingsNamespaceView) {
 
 function commonProps(
   store: PluginSettingsStore,
-  api: Pick<IApiClient, 'settings' | 'composition'>,
+  api: Pick<IApiClient, 'settings'>,
+  crawler: CrawlerCompositionApi,
 ): PluginSettingsSectionCommonProps {
   const usePluginSettings = ((selector: (state: PluginSettingsState) => unknown) =>
     selector(store.store.getSnapshot())) as PluginSettingsSectionCommonProps['usePluginSettings']
@@ -75,25 +77,27 @@ function commonProps(
     usePluginSettings,
     reload: () => store.load(),
     mutateSettings: request => api.settings.mutate(request),
-    updateComposition: request => api.composition.update(request),
-    removeComposition: request => api.composition.remove(request),
+    updateComposition: request => crawler.update(request.id, request.ops),
+    removeComposition: request => crawler.remove(request.id),
     t,
   } as PluginSettingsSectionCommonProps
 }
 
 function mount(
   store: PluginSettingsStore,
-  api: Pick<IApiClient, 'settings' | 'composition'>,
+  api: Pick<IApiClient, 'settings'>,
   pluginKey: PluginSettingsSectionProps['pluginKey'] = 'settings:demo',
+  crawler: CrawlerCompositionApi = { describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn() },
 ) {
-  return render(<PluginSettingsSection {...commonProps(store, api)} pluginKey={pluginKey} />)
+  return render(<PluginSettingsSection {...commonProps(store, api, crawler)} pluginKey={pluginKey} />)
 }
 
 function mountStatus(
   store: PluginSettingsStore,
-  api: Pick<IApiClient, 'settings' | 'composition'> = { settings: {}, composition: {} } as never,
+  api: Pick<IApiClient, 'settings'> = { settings: {} } as never,
+  crawler: CrawlerCompositionApi = { describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn() },
 ) {
-  return render(<PluginSettingsStatusSection {...commonProps(store, api)} />)
+  return render(<PluginSettingsStatusSection {...commonProps(store, api, crawler)} />)
 }
 
 function readyStore(namespaces: SettingsNamespaceView[], writable = true): PluginSettingsStore {
@@ -104,14 +108,10 @@ function readyStore(namespaces: SettingsNamespaceView[], writable = true): Plugi
       value: { writable, namespaces },
     },
   }))
-  const compositionDescribe = vi.fn(() => Promise.resolve({
-    rpcId: 'c' as never,
-    result: { ok: true as const, value: { namespaces: [] } },
-  }))
-  const store = new PluginSettingsStore({
-    settings: { describe },
-    composition: { describe: compositionDescribe },
-  } as never)
+  const store = new PluginSettingsStore(
+    { settings: { describe } } as never,
+    { describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn() },
+  )
   store.store.update((state) => {
     state.status = 'ready'
     state.error = null
@@ -414,11 +414,10 @@ describe('PluginSettingsSection', () => {
     }))
     // The catalog store and the editor share one wire face, so the reload after a
     // conflict lands on the same describe mock.
-    const api = { settings: { mutate, describe }, composition: { describe: vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: { ok: true as const, value: { namespaces: [] } },
-    })) } } as never
-    const store = new PluginSettingsStore(api)
+    const api = { settings: { mutate, describe } } as never
+    const store = new PluginSettingsStore(api, {
+      describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn(),
+    })
     store.store.update((state) => {
       state.status = 'ready'
       state.error = null
@@ -441,11 +440,10 @@ describe('PluginSettingsSection', () => {
         error: { code: 'settings-rejected', message: 'denied', details: {} },
       },
     }))
-    const api = { settings: { mutate, describe }, composition: { describe: vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: { ok: true as const, value: { namespaces: [] } },
-    })) } } as never
-    const store = new PluginSettingsStore(api)
+    const api = { settings: { mutate, describe } } as never
+    const store = new PluginSettingsStore(api, {
+      describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn(),
+    })
     store.store.update((state) => {
       state.status = 'ready'
       state.error = null
@@ -497,7 +495,9 @@ describe('PluginSettingsSection', () => {
     const view = mount(store, api)
     fireEvent.change(screen.getByLabelText<HTMLInputElement>('Greeting'), { target: { value: 'hola' } })
     store.store.update((state) => { state.namespaces = [demoNamespace()] })
-    view.rerender(<PluginSettingsSection {...commonProps(store, api)} pluginKey="settings:demo" />)
+    view.rerender(<PluginSettingsSection {...commonProps(store, api, {
+      describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn(),
+    })} pluginKey="settings:demo" />)
     expect(screen.getByLabelText<HTMLInputElement>('Greeting').value).toBe('hola')
 
     store.store.update((state) => {
@@ -507,7 +507,9 @@ describe('PluginSettingsSection', () => {
         user: { greeting: 'remote', nested: { host: 'y' } },
       })]
     })
-    view.rerender(<PluginSettingsSection {...commonProps(store, api)} pluginKey="settings:demo" />)
+    view.rerender(<PluginSettingsSection {...commonProps(store, api, {
+      describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn(),
+    })} pluginKey="settings:demo" />)
     expect(screen.getByLabelText<HTMLInputElement>('Greeting').value).toBe('remote')
   })
 
@@ -540,7 +542,10 @@ describe('PluginSettingsSection', () => {
   })
 
   it('surfaces an initial load failure with a retry that reloads', () => {
-    const store = new PluginSettingsStore({ settings: { describe: vi.fn() }, composition: { describe: vi.fn() } } as never)
+    const store = new PluginSettingsStore(
+      { settings: { describe: vi.fn() } } as never,
+      { describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn() },
+    )
     store.store.update((state) => {
       state.status = 'error'
       state.error = 'boom'
@@ -553,7 +558,10 @@ describe('PluginSettingsSection', () => {
   })
 
   it('renders an error status even when the failure text is empty', () => {
-    const store = new PluginSettingsStore({ settings: { describe: vi.fn() }, composition: { describe: vi.fn() } } as never)
+    const store = new PluginSettingsStore(
+      { settings: { describe: vi.fn() } } as never,
+      { describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn() },
+    )
     store.store.update((state) => {
       state.status = 'error'
       state.error = null
@@ -564,7 +572,9 @@ describe('PluginSettingsSection', () => {
 
   it('renders null after a bound source disappears and binds factory components to distinct keys', () => {
     const store = readyStore([demoNamespace(), demoNamespace({ ns: 'other' })])
-    const props = commonProps(store, { settings: {}, composition: {} } as never)
+    const props = commonProps(store, { settings: {} } as never, {
+      describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn(),
+    })
     const Demo = createPluginSettingsSection('settings:demo')
     const Other = createPluginSettingsSection('settings:other')
     expect(Demo).not.toBe(Other)
@@ -576,7 +586,10 @@ describe('PluginSettingsSection', () => {
   })
 
   it('shows a loading notice while the first describe is in flight', () => {
-    const store = new PluginSettingsStore({ settings: { describe: vi.fn() }, composition: { describe: vi.fn() } } as never)
+    const store = new PluginSettingsStore(
+      { settings: { describe: vi.fn() } } as never,
+      { describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn() },
+    )
     store.store.update((state) => {
       state.status = 'loading'
       state.error = null
@@ -590,7 +603,7 @@ describe('PluginSettingsSection', () => {
     store.store.update((state) => {
       state.composition = [compositionRow({ name: 'Session service' })]
     })
-    mount(store, { settings: {}, composition: {} } as never, 'composition:session')
+    mount(store, { settings: {} } as never, 'composition:session')
     expect(screen.getByRole('heading', { name: 'Session service' })).toBeTruthy()
     expect(screen.queryByRole('navigation')).toBeNull()
     expect(screen.getAllByText(en.restart).length).toBeGreaterThanOrEqual(1)
@@ -603,7 +616,7 @@ describe('PluginSettingsSection', () => {
     store.store.update((state) => {
       state.composition = [compositionRow({ id: 'demo', name: 'Demo service' })]
     })
-    const api = { settings: {}, composition: {} } as never
+    const api = { settings: {} } as never
     mount(store, api)
     expect(screen.getByRole('heading', { name: 'demo' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: en['composition.remove'] })).toBeNull()
@@ -625,18 +638,14 @@ describe('PluginSettingsSection', () => {
     store.store.update((state) => {
       state.composition = [compositionRow()]
     })
-    const update = vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: { ok: true as const, value: compositionRow({ value: { retries: 4 } }) },
-    }))
-    mount(store, { settings: {}, composition: { update } } as never, 'composition:session')
+    const update = vi.fn(async () => compositionRow({ value: { retries: 4 } }))
+    mount(store, { settings: {} } as never, 'composition:session', {
+      describe: vi.fn(async () => []), update, remove: vi.fn(),
+    })
     fireEvent.change(screen.getByLabelText('Retries'), { target: { value: '4' } })
     fireEvent.click(screen.getByText(en.save))
     await waitFor(() => {
-      expect(update).toHaveBeenCalledWith({
-        id: 'session',
-        ops: [{ op: 'set', path: ['retries'], value: 4 }],
-      })
+      expect(update).toHaveBeenCalledWith('session', [{ op: 'set', path: ['retries'], value: 4 }])
     })
     expect(screen.getByText(en.saved)).toBeTruthy()
   })
@@ -646,21 +655,12 @@ describe('PluginSettingsSection', () => {
       rpcId: 'c' as never,
       result: { ok: true as const, value: { writable: true, namespaces: [] } },
     }))
-    const compositionDescribe = vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: { ok: true as const, value: { namespaces: [] } },
-    }))
-    const remove = vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: { ok: true as const, value: {} },
-    }))
-    // The catalog store and the editor share one wire face, so the reload after a
-    // removal lands on the same describe mocks.
-    const api = {
-      settings: { describe },
-      composition: { remove, describe: compositionDescribe },
-    } as never
-    const store = new PluginSettingsStore(api)
+    const crawler = {
+      describe: vi.fn(async () => []),
+      update: vi.fn(),
+      remove: vi.fn(async () => {}),
+    }
+    const store = new PluginSettingsStore({ settings: { describe } } as never, crawler)
     store.store.update((state) => {
       state.status = 'ready'
       state.error = null
@@ -668,13 +668,13 @@ describe('PluginSettingsSection', () => {
       state.namespaces = []
       state.composition = [compositionRow()]
     })
-    mount(store, api, 'composition:session')
+    mount(store, { settings: { describe } } as never, 'composition:session', crawler)
     fireEvent.click(screen.getByRole('button', { name: en['composition.remove'] }))
     await waitFor(() => {
-      expect(remove).toHaveBeenCalledWith({ id: 'session' })
+      expect(crawler.remove).toHaveBeenCalledWith('session')
     })
     expect(describe).toHaveBeenCalled()
-    expect(compositionDescribe).toHaveBeenCalled()
+    expect(crawler.describe).toHaveBeenCalled()
   })
 
   it('surfaces composition write and removal refusals on the card', async () => {
@@ -682,21 +682,11 @@ describe('PluginSettingsSection', () => {
     store.store.update((state) => {
       state.composition = [compositionRow()]
     })
-    const update = vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: {
-        ok: false as const,
-        error: { code: 'composition-rejected', message: 'denied', details: { id: 'session' } },
-      },
-    }))
-    const remove = vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: {
-        ok: false as const,
-        error: { code: 'composition-rejected', message: 'remove-denied', details: { id: 'session' } },
-      },
-    }))
-    mount(store, { settings: {}, composition: { update, remove } } as never, 'composition:session')
+    const update = vi.fn(async () => { throw new Error('denied') })
+    const remove = vi.fn(async () => { throw new Error('remove-denied') })
+    mount(store, { settings: {} } as never, 'composition:session', {
+      describe: vi.fn(async () => []), update, remove,
+    })
     fireEvent.change(screen.getByLabelText('Retries'), { target: { value: '4' } })
     fireEvent.click(screen.getByText(en.save))
     await waitFor(() => { expect(screen.getByText('denied')).toBeTruthy() })
@@ -709,11 +699,9 @@ describe('PluginSettingsSection', () => {
     })
     // oxlint-disable-next-line typescript/prefer-promise-reject-errors -- deliberately exercises the transport rejection path
     const removeOffline = vi.fn(() => Promise.reject('offline'))
-    mount(
-      rejecting,
-      { settings: {}, composition: { remove: removeOffline } } as never,
-      'composition:session',
-    )
+    mount(rejecting, { settings: {} } as never, 'composition:session', {
+      describe: vi.fn(async () => []), update: vi.fn(), remove: removeOffline,
+    })
     fireEvent.click(screen.getByRole('button', { name: en['composition.remove'] }))
     await waitFor(() => { expect(screen.getByText('offline')).toBeTruthy() })
     cleanup()
@@ -721,10 +709,11 @@ describe('PluginSettingsSection', () => {
     rejectingError.store.update((state) => {
       state.composition = [compositionRow()]
     })
-    mount(rejectingError, {
-      settings: {},
-      composition: { remove: vi.fn(() => Promise.reject(new Error('offline-error'))) },
-    } as never, 'composition:session')
+    mount(rejectingError, { settings: {} } as never, 'composition:session', {
+      describe: vi.fn(async () => []),
+      update: vi.fn(),
+      remove: vi.fn(() => Promise.reject(new Error('offline-error'))),
+    })
     fireEvent.click(screen.getByRole('button', { name: en['composition.remove'] }))
     await waitFor(() => { expect(screen.getByText('offline-error')).toBeTruthy() })
   })

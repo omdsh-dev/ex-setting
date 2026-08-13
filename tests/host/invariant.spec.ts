@@ -4,9 +4,9 @@ import { Context } from 'cordis'
 import z from 'schemastery'
 import InvariantService from '@deepseek-ai/dsh-invariants'
 import * as CrawlerInvariant from '../../src/invariant.ts'
-import { Settings, settingsNamespace, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
+import { SettingsProvider, settingsNamespace, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
 
-class MemorySettings extends Settings {
+class MemorySettings extends SettingsProvider {
   readonly writable = true
   protected load(): Promise<Record<string, unknown>> { return Promise.resolve({}) }
   protected persist(_ns: SettingsNamespace, _section: Record<string, unknown>): Promise<void> {

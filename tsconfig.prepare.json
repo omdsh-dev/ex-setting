@@ -1,7 +1,15 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "target": "ES2024",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "types": ["node"]
   },
-  "include": []
+  "include": ["src"]
 }

@@ -8,18 +8,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
-  CompositionNamespaceView, IApiClient, SettingsNamespaceView, SettingsPathOpView,
+  IApiClient, SettingsNamespaceView, SettingsPathOpView,
 } from '@deepseek-ai/dsh-client-connection/client'
 import type { SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import {
   deletePath, getPath, hasPath, rehydrateSchema, setPath, validateDraft,
 } from '@deepseek-ai/dsh-client-schema-form'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { CompositionNamespaceView, CompositionPathOpView } from './crawler-api.ts'
 import type {
   PluginSettingsEntryKey, PluginSettingsState,
 } from './plugin-settings-store.ts'
 import { pluginSettingsEntry } from './plugin-settings-store.ts'
 import styles from './PluginSettingsSection.module.css'
+
+/** One composition edit request handed to the crawler's update face. */
+export interface CompositionUpdateRequest {
+  /** The composition row id. */
+  id: string
+  /** Ordered path edits against the CURRENT resolved configuration. */
+  ops: CompositionPathOpView[]
+}
 
 /** Registration-side business face shared by every dynamic plugin section. */
 export interface PluginSettingsSectionInjected {
@@ -29,10 +38,10 @@ export interface PluginSettingsSectionInjected {
   reload: () => Promise<void>
   /** Persist settings-namespace path ops. */
   mutateSettings: IApiClient['settings']['mutate']
-  /** Persist composition-row path ops. */
-  updateComposition: IApiClient['composition']['update']
+  /** Persist composition-row path ops through the crawler route. */
+  updateComposition: (request: CompositionUpdateRequest, signal?: AbortSignal) => Promise<CompositionNamespaceView>
   /** Remove one composition row from the personal overlay. */
-  removeComposition: IApiClient['composition']['remove']
+  removeComposition: (request: { id: string }, signal?: AbortSignal) => Promise<void>
 }
 
 /** Props common to every dynamic plugin or status section. */
@@ -585,19 +594,16 @@ function CompositionCard({
     revision: 0,
   }
   const write: WriteFn = async (ops) => {
-    const response = await updateComposition({ id: row.id, ops })
-    if (!response.result.ok) return { conflict: false, message: response.result.error.message }
+    // The crawler route rejects (throw) on a refused edit; a resolved view is
+    // the committed row.
+    await updateComposition({ id: row.id, ops })
     return undefined
   }
   const remove = async (): Promise<void> => {
     setRemoving(true)
     setRemoveFailure(undefined)
     try {
-      const response = await removeComposition({ id: row.id })
-      if (!response.result.ok) {
-        setRemoveFailure(response.result.error.message)
-        return
-      }
+      await removeComposition({ id: row.id })
       onChanged()
     } catch (error) {
       setRemoveFailure(error instanceof Error ? error.message : String(error))

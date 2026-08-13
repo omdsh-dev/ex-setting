@@ -1,14 +1,14 @@
 /**
  * Controller for the automatically crawled plugin-settings catalog. The host
  * remains the source of truth: the store keeps the latest redacted settings
- * namespaces and composition rows, with latest-load-wins refresh semantics.
+ * namespaces (from the gateway's settings RPC) and composition rows (from
+ * the crawler's own route), with latest-load-wins refresh semantics.
  */
 
-import type {
-  CompositionNamespaceView, IApiClient, SettingsNamespaceView,
-} from '@deepseek-ai/dsh-client-connection/client'
+import type { IApiClient, SettingsNamespaceView } from '@deepseek-ai/dsh-client-connection/client'
 import type { SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
+import type { CompositionNamespaceView, CrawlerCompositionApi } from './crawler-api.ts'
 
 /** Generic plugin-settings catalog snapshot. */
 export interface PluginSettingsState {
@@ -109,9 +109,15 @@ export class PluginSettingsStore {
   private generation = 0
 
   /**
-   * @param api - the settings and composition wire faces.
+   * @param api - the gateway settings wire face.
+   * @param crawler - the crawler composition face (degrades to empty on an
+   * unreachable route, so a deployment without the crawler still shows the
+   * settings namespaces).
    */
-  constructor(private readonly api: Pick<IApiClient, 'settings' | 'composition'>) {}
+  constructor(
+    private readonly api: Pick<IApiClient, 'settings'>,
+    private readonly crawler: CrawlerCompositionApi,
+  ) {}
 
   /**
    * Load the redacted descriptors the host serves, ordered by namespace id.
@@ -126,23 +132,21 @@ export class PluginSettingsStore {
       state.error = null
     })
     try {
-      const [settingsResponse, compositionResponse] = await Promise.all([
+      const [settingsResponse, composition] = await Promise.all([
         this.api.settings.describe({}),
-        this.api.composition.describe({}),
+        this.crawler.describe(),
       ])
       if (!settingsResponse.result.ok) throw new Error(settingsResponse.result.error.message)
-      if (!compositionResponse.result.ok) throw new Error(compositionResponse.result.error.message)
       const { writable, namespaces: described } = settingsResponse.result.value
       const namespaces = [...described].sort((a, b) => a.ns.localeCompare(b.ns))
-      const composition = [...compositionResponse.result.value.namespaces]
-        .sort((a, b) => a.id.localeCompare(b.id))
+      const ordered = [...composition].sort((a, b) => a.id.localeCompare(b.id))
       if (generation !== this.generation) return
       this.store.update((state) => {
         state.status = 'ready'
         state.error = null
         state.writable = writable
         state.namespaces = namespaces
-        state.composition = composition
+        state.composition = ordered
       })
     } catch (error) {
       if (generation !== this.generation) return

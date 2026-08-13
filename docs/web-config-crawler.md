@@ -1,12 +1,19 @@
-# @deepseek-ai/dsh-host-web-config-crawler
+# @deepseek-ai/dsh-ex-setting — web-config-crawler
 
-English | [中文](README.zh.md)
+English | [中文](../README.zh.md)
 
-The deployment-level opt-in that makes the Web configuration surface fully automatic. While this plugin is mounted, the host API gateway serves EVERY registered settings namespace to the Web client — no per-plugin opt-in required — and exposes every mounted plugin's composition `Config` (the cordis.yml row configuration) through the `composition.*` RPC domain. A composition without it keeps the gateway's default stance: only configurable model-provider namespaces and the explicit `permission`/`ui-onboarding` allowlist are served, and any other namespace answers `settings-not-exposed`.
+The deployment-level opt-in that makes the Web configuration surface fully automatic. While this plugin is mounted, the host API gateway serves EVERY registered settings namespace to the Web client — no per-plugin opt-in required — and every mounted plugin's composition `Config` (the cordis.yml row configuration) is exposed to the browser through the crawler's own webserver route. A composition without it keeps the gateway's default stance: only configurable model-provider namespaces and the explicit `permission`/`ui-onboarding` allowlist are served, and any other namespace answers `settings-not-exposed`.
+
+## External zero-change design
+
+The crawler adds its behavior with **zero out-of-package host changes**:
+
+- **Exposure widening rides the Fabric layer.** The bundle's `cordis.patch.yml` overrides the web roster's `cordis-fabric` row by id, carrying the static `web-config-crawler/exposed-namespaces` stub that transforms the gateway's private `exposedNamespaces()` decision at load time (`filePaths` covers both launch forms: the source launch loads `src/api-proxy.ts`, built deployments load `lib/index.js`). This plugin binds the runtime handler through the compat facade (`FabricCompatService`) when it mounts; the `after` handler adds every namespace the crawler's registry currently enumerates, resolved at call time. Without the transform (a deployment that omits the stub) the patch never fires and the allowlist stance holds.
+- **Composition writes own a webserver route.** The browser half reads and edits composition rows through the crawler's exact route `GET/POST /dsh-config/crawler/composition` (`src/routes.ts`) instead of a gateway RPC domain, so `apiproxy` and `connection` stay untouched. The route mounts only when the webserver capability is present; non-web compositions skip it.
 
 ## Service API
 
-- Provides `ctx.webConfigCrawler` (`namespaces(): SettingsNamespace[]`) — the live settings registry, in registration order, resolved at call time so namespaces that mount or dispose between requests are reflected immediately. The gateway consults this service whenever it computes the servable set.
+- Provides `ctx.webConfigCrawler` (`namespaces(): SettingsNamespace[]`) — the live settings registry, in registration order, resolved at call time so namespaces that mount or dispose between requests are reflected immediately. The exposure patch consults this face whenever the gateway computes the servable set.
 - `compositionConfigs()` — every mounted plugin whose composition row carries a `Config` schema, redacted (the same structural walk the settings seam uses), in registry order.
 - `updateComposition(id, ops)` — applies path-addressed ops to the plugin's CURRENT resolved configuration (so a secret the wire never returned survives), validates against the `Config` schema, and persists the full row into the personal overlay.
 - `removeComposition(id)` — removes the row from the personal overlay so the next boot reverts to the lower composition layers.

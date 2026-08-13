@@ -1,6 +1,6 @@
-# @deepseek-ai/dsh-host-web-config-crawler
+# @deepseek-ai/dsh-ex-setting — web-config-crawler
 
-[English](README.md) | 中文
+[English](../README.md) | 中文
 
 部署层的显式选择：挂载本插件后，宿主 API 网关向 Web 客户端提供**全部**已注册 settings namespace——插件无需任何接入动作——并通过 `composition.*` RPC 领域暴露每个挂载插件的组合 `Config`（cordis.yml 行配置）。不挂载的组合保持网关默认立场：只提供可配置模型提供方 namespace 与显式 `permission`/`ui-onboarding` allowlist，其余 namespace 一律回答 `settings-not-exposed`。
 

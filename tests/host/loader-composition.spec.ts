@@ -16,7 +16,7 @@ import Include from '@cordisjs/plugin-include'
 import z from 'schemastery'
 import { z as zod } from 'zod'
 import { settingsNamespace } from '@deepseek-ai/dsh-settings'
-import SettingsLocal from '@deepseek-ai/dsh-settings-local'
+import SettingsFile from '@deepseek-ai/dsh-settings-file'
 import * as Crawler from '../../src/index.ts'
 
 let root: string | undefined
@@ -60,7 +60,7 @@ describe('web-config-crawler real composition', () => {
     const configPath = join(root, 'cordis.yml')
     await writeFile(configPath, [
       '- id: settings',
-      "  name: '@deepseek-ai/dsh-settings-local'",
+      "  name: '@deepseek-ai/dsh-settings-file'",
       '  config:',
       `    path: ${JSON.stringify(settingsPath)}`,
       '    debounceMs: 10',
@@ -80,7 +80,7 @@ describe('web-config-crawler real composition', () => {
     await ctx.plugin(Loader)
     ctx.loader.builtins.include = Include
     const modules = new Map<string, unknown>([
-      ['@deepseek-ai/dsh-settings-local', SettingsLocal],
+      ['@deepseek-ai/dsh-settings-file', SettingsFile],
       ['@deepseek-ai/dsh-ex-setting', Crawler],
       ['test-crawler-consumer', consumer],
       ['test-native-consumer', nativeConsumer],
@@ -102,7 +102,7 @@ describe('web-config-crawler real composition', () => {
     expect(crawler).toBeDefined()
     expect(crawler!.namespaces().map(String)).toEqual(['consumer'])
     // The composition crawl exposes every schema-carrying row — the
-    // settings-local and crawler rows carry Configs too — redacted.
+    // settings-file and crawler rows carry Configs too — redacted.
     const configs = crawler!.compositionConfigs()
     expect(configs.map(view => view.id)).toContain('consumer')
     expect(configs.map(view => view.id)).not.toContain('native-consumer')
@@ -132,7 +132,7 @@ describe('web-config-crawler real composition', () => {
     const configPath = join(root, 'cordis.yml')
     await writeFile(configPath, [
       '- id: settings',
-      "  name: '@deepseek-ai/dsh-settings-local'",
+      "  name: '@deepseek-ai/dsh-settings-file'",
       '  config:',
       `    path: ${JSON.stringify(settingsPath)}`,
       '    debounceMs: 10',
@@ -151,7 +151,7 @@ describe('web-config-crawler real composition', () => {
     await ctx.plugin(Loader)
     ctx.loader.builtins.include = Include
     const modules = new Map<string, unknown>([
-      ['@deepseek-ai/dsh-settings-local', SettingsLocal],
+      ['@deepseek-ai/dsh-settings-file', SettingsFile],
       ['@deepseek-ai/dsh-ex-setting', Crawler],
       ['test-crawler-consumer', consumer],
     ])
@@ -218,7 +218,7 @@ describe('web-config-crawler real composition', () => {
     const configPath = join(root, 'cordis.yml')
     await writeFile(configPath, [
       '- id: settings',
-      "  name: '@deepseek-ai/dsh-settings-local'",
+      "  name: '@deepseek-ai/dsh-settings-file'",
       '  config:',
       `    path: ${JSON.stringify(settingsPath)}`,
       '    debounceMs: 10',
@@ -237,7 +237,7 @@ describe('web-config-crawler real composition', () => {
     await ctx.plugin(Loader)
     ctx.loader.builtins.include = Include
     const modules = new Map<string, unknown>([
-      ['@deepseek-ai/dsh-settings-local', SettingsLocal],
+      ['@deepseek-ai/dsh-settings-file', SettingsFile],
       ['@deepseek-ai/dsh-ex-setting', Crawler],
       ['test-crawler-consumer', consumer],
     ])

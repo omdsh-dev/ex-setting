@@ -3,5 +3,15 @@ packages:
 
 autoInstallPeers: false
 
+# The Fabric trio resolves from git subdirectory specs and builds itself
+# through its prepare scripts; pnpm 11 allowBuilds only accepts exact
+# git+url#commit keys (the commit changes on every push), so the git
+# installs are allowed wholesale.
+dangerouslyAllowAllBuilds: true
+
 allowBuilds:
   esbuild: true
+
+# The git-installed Fabric trio declares cordis as a peer; pin it to the
+# single top-level copy so ex-setting and the trio share one cordis type.
+public-hoist-pattern[]: '*cordis*'

@@ -7,16 +7,32 @@
  * overlay. Mounting it is the deployment's explicit decision to expose all
  * user-adjustable plugin settings over the loopback-only configuration plane;
  * a composition without it keeps the gateway's default allowlist stance.
+ *
+ * The exposure widening rides the Fabric layer instead of editing the core
+ * gateway: the web profile's `cordis-fabric` row carries a static
+ * `web-config-crawler/exposed-namespaces` stub that transforms the gateway's
+ * private `exposedNamespaces()` decision at load time, and this plugin binds
+ * the runtime handler through the compat facade when it mounts. The handler
+ * adds every namespace the crawler's registry currently enumerates, resolved
+ * at call time — the same full-enumeration guarantee the direct edit made,
+ * without a crawler import in the core package. Without the transform (a
+ * deployment that omits the stub) the patch simply never fires and the
+ * gateway keeps its allowlist stance; the child-process composition test
+ * exercises the real transformed gateway.
  * @module @deepseek-ai/dsh-ex-setting
  */
 
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Context } from 'cordis'
+import type { Context } from '@deepseek-ai/cordis'
 import z from 'schemastery'
 import { redactSecrets } from '@deepseek-ai/dsh-settings'
 import type { SettingsNamespace } from '@deepseek-ai/dsh-settings'
-import { dshHomePath } from '@deepseek-ai/dsh-paths'
+import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
+import { registerCompositionRoute } from './routes.ts'
+import { NAV_SCROLL_ROUTE, navScrollPatch } from './nav-scroll.ts'
+import FabricCompatService from 'cordis-fabric-api/compat'
+import type { FabricCall, FabricTarget } from 'cordis-fabric-api/compat'
 import { load as loadYaml, dump as dumpYaml } from 'js-yaml'
 // Side-effect type import: the loader augments cordis's Fiber with `entry`
 // (the composition row behind each runtime fiber).
@@ -73,7 +89,7 @@ export interface WebConfigCrawler {
   removeComposition(id: string): Promise<void>
 }
 
-declare module 'cordis' {
+declare module '@deepseek-ai/cordis' {
   interface Context {
     /** The live auto-crawl face; absent until the crawler plugin mounts. */
     webConfigCrawler?: WebConfigCrawler
@@ -82,6 +98,22 @@ declare module 'cordis' {
 
 /** Cordis plugin identity (function-plugin export shape). */
 export const name = 'web-config-crawler'
+
+/** Patch id shared with the web roster's `config.fabric.patches` stub. */
+export const EXPOSED_NAMESPACES_PATCH = 'web-config-crawler/exposed-namespaces'
+
+/**
+ * The Fabric patch target: the gateway's private exposure decision. The
+ * web profile's static stub transforms this function in both launch forms
+ * (the source launch loads `src/api-proxy.ts`, built deployments load
+ * `lib/index.js`); this plugin binds the runtime handler at apply time.
+ */
+export const exposedNamespacesTarget: FabricTarget = {
+  module: '@deepseek-ai/dsh-host-apiproxy',
+  versionRange: '>=0.0.1-0',
+  filePaths: ['src/api-proxy.ts', 'lib/index.js'],
+  functionQuery: { functionName: 'exposedNamespaces', kind: 'Sync' },
+}
 
 /** Required services (cordis fiber inject). */
 export const inject = ['settings']
@@ -160,12 +192,29 @@ async function readOverlay(path: string): Promise<unknown[]> {
 }
 
 /**
- * Provide the crawler service: the settings registry, the composition
- * registry, and the overlay write path.
+ * Widen the gateway's exposure set with every namespace the crawler's
+ * registry currently enumerates, at call time — the Fabric `after` handler
+ * behind `web-config-crawler/exposed-namespaces`. Mutates the traced
+ * function's result in place (the gateway reads the same Set object), so
+ * the allowlist decision stays authoritative and this patch only adds what
+ * the deployment opted into by mounting the crawler.
+ * @param call - the fabric call record whose `result` holds the exposure Set.
+ * @param crawler - the live crawler face whose enumeration feeds the set.
+ */
+export function widenExposedNamespaces(call: FabricCall, crawler: WebConfigCrawler): void {
+  if (!(call.result instanceof Set)) return
+  for (const namespace of crawler.namespaces()) call.result.add(String(namespace))
+}
+
+/**
+ * Provide the crawler service (the settings registry, the composition
+ * registry, and the overlay write path), then mount the compat facade and
+ * bind the exposure-widening handler under the patch id the web profile's
+ * `cordis-fabric` stub transforms.
  * @param ctx - host context with the settings seam mounted.
  * @param config - resolved crawler configuration.
  */
-export function apply(ctx: Context, config?: Config): void {
+export async function apply(ctx: Context, config?: Config): Promise<void> {
   const overlayPath = config?.overlayPath ?? join(dshHomePath(), 'config.yaml')
   const crawler: WebConfigCrawler = {
     namespaces: () => ctx.settings.describe({ redactSecrets: true }).map(descriptor => descriptor.ns),
@@ -218,6 +267,33 @@ export function apply(ctx: Context, config?: Config): void {
     },
   }
   ctx.provide('webConfigCrawler', crawler)
+  registerCompositionRoute(ctx, crawler)
+  await ctx.plugin(FabricCompatService, {})
+  const compat = ctx.get('fabricCompat')
+  /* v8 ignore next -- ctx.plugin(FabricCompatService) resolves it or rejects before returning. */
+  if (compat === undefined) throw new Error('web-config-crawler: fabricCompat unavailable after mounting')
+  compat.registerPatch({
+    id: EXPOSED_NAMESPACES_PATCH,
+    target: exposedNamespacesTarget,
+    operation: 'after',
+    // The binding is harmless without the load-time transform (the registry
+    // registers the entry; the transformed gateway simply never publishes);
+    // the child-process composition test exercises the real transformed call.
+    /* v8 ignore next -- the closure runs only in the transformed child process, which v8 coverage never measures. */
+    handler: (call: FabricCall) => { widenExposedNamespaces(call, crawler) },
+  })
+  // The browser half injects the settings-navigation scroll styles through a
+  // `before` handler on the transformed ui-settings-general bundle; serve
+  // the transformed bundle only when the webserver capability is present.
+  if (ctx.get('webServer') !== undefined) {
+    compat.serveBundle({
+      route: NAV_SCROLL_ROUTE,
+      patch: navScrollPatch,
+      // The app must keep working if the transform cannot run: the dialog
+      // then shows the full catalog without scrolling (degraded).
+      fallback: 'raw',
+    })
+  }
 }
 
 /** Immutably set a path in a JSON-shaped value, materializing containers. */

@@ -4,6 +4,16 @@ import type { SettingsNamespaceView } from '@deepseek-ai/dsh-client-connection/c
 import {
   PluginSettingsStore, pluginSettingsEntries, pluginSettingsEntry, settingsMessage,
 } from '../../src/client/plugin-settings-store.ts'
+import type { CrawlerCompositionApi } from '../../src/client/crawler-api.ts'
+
+/** A crawler face whose enumeration is empty and whose edits are inert. */
+function emptyCrawler(): CrawlerCompositionApi {
+  return {
+    describe: vi.fn(async () => []),
+    update: vi.fn(async () => ({ id: 'unused', schema: {}, value: {}, secrets: [] })),
+    remove: vi.fn(async () => {}),
+  }
+}
 
 function exposed(ns: string): SettingsNamespaceView {
   return {
@@ -26,12 +36,6 @@ function okDescribe(namespaces: SettingsNamespaceView[], writable = true) {
 function apiOf(describe: ReturnType<typeof vi.fn>) {
   return {
     settings: { describe },
-    composition: {
-      describe: vi.fn(() => Promise.resolve({
-        rpcId: 'c' as never,
-        result: { ok: true as const, value: { namespaces: [] } },
-      })),
-    },
   } as never
 }
 
@@ -43,7 +47,7 @@ describe('PluginSettingsStore', () => {
       exposed('b'),
       exposed('a'),
     ])
-    const store = new PluginSettingsStore(apiOf(describe))
+    const store = new PluginSettingsStore(apiOf(describe), emptyCrawler())
     await store.load()
     expect(store.store.getSnapshot()).toMatchObject({
       status: 'ready',
@@ -56,23 +60,16 @@ describe('PluginSettingsStore', () => {
 
   it('retains composition rows alongside settings namespaces, ordered by id', async () => {
     const describe = okDescribe([exposed('z'), exposed('a')])
-    const compositionDescribe = vi.fn(() => Promise.resolve({
-      rpcId: 'c' as never,
-      result: {
-        ok: true as const,
-        value: {
-          namespaces: [
-            { id: 'session', name: 'Web crawler', schema: {}, value: {}, secrets: [] },
-            { id: 'a', schema: {}, value: {}, secrets: [] },
-            { id: 'crawler', name: 'Web crawler', schema: {}, value: {}, secrets: [] },
-          ],
-        },
-      },
-    }))
-    const store = new PluginSettingsStore({
-      settings: { describe },
-      composition: { describe: compositionDescribe },
-    } as never)
+    const compositionDescribe = vi.fn(() => Promise.resolve([
+      { id: 'session', name: 'Web crawler', schema: {}, value: {}, secrets: [] },
+      { id: 'a', schema: {}, value: {}, secrets: [] },
+      { id: 'crawler', name: 'Web crawler', schema: {}, value: {}, secrets: [] },
+    ]))
+    const store = new PluginSettingsStore({ settings: { describe } } as never, {
+      describe: compositionDescribe,
+      update: vi.fn(),
+      remove: vi.fn(),
+    })
     await store.load()
     const state = store.store.getSnapshot()
     expect(state.namespaces.map(view => view.ns)).toEqual(['a', 'z'])
@@ -92,7 +89,7 @@ describe('PluginSettingsStore', () => {
 
   it('surfaces a rejected describe as an error with its message', async () => {
     const describe = vi.fn(() => Promise.reject(new Error('boom')))
-    const store = new PluginSettingsStore(apiOf(describe))
+    const store = new PluginSettingsStore(apiOf(describe), emptyCrawler())
     await store.load()
     expect(store.store.getSnapshot()).toMatchObject({ status: 'error', error: 'boom' })
   })
@@ -101,9 +98,7 @@ describe('PluginSettingsStore', () => {
     const stringRejection = new PluginSettingsStore({
       // oxlint-disable-next-line typescript/prefer-promise-reject-errors -- deliberately exercises the non-Error rejection path
       settings: { describe: vi.fn(() => Promise.reject('plain-failure')) },
-      // oxlint-disable-next-line typescript/prefer-promise-reject-errors -- deliberately exercises the non-Error rejection path
-      composition: { describe: vi.fn(() => Promise.reject('plain-failure')) },
-    } as never)
+    } as never, emptyCrawler())
     await stringRejection.load()
     expect(stringRejection.store.getSnapshot()).toMatchObject({ status: 'error', error: 'plain-failure' })
 
@@ -114,13 +109,7 @@ describe('PluginSettingsStore', () => {
           result: { ok: false as const, error: { code: 'settings-rejected', message: 'denied', details: {} } },
         })),
       },
-      composition: {
-        describe: vi.fn(() => Promise.resolve({
-          rpcId: 'c' as never,
-          result: { ok: true as const, value: { namespaces: [] } },
-        })),
-      },
-    } as never)
+    } as never, emptyCrawler())
     await business.load()
     expect(business.store.getSnapshot()).toMatchObject({ status: 'error', error: 'denied' })
   })
@@ -134,7 +123,7 @@ describe('PluginSettingsStore', () => {
         rpcId: 'c' as never,
         result: { ok: true as const, value: { writable: true, namespaces: [exposed('second')] } },
       }))
-    const store = new PluginSettingsStore(apiOf(describe))
+    const store = new PluginSettingsStore(apiOf(describe), emptyCrawler())
     const stale = store.load()
     await store.load()
     settle({
@@ -154,7 +143,7 @@ describe('PluginSettingsStore', () => {
         rpcId: 'c' as never,
         result: { ok: true as const, value: { writable: true, namespaces: [exposed('second')] } },
       }))
-    const store = new PluginSettingsStore(apiOf(describe))
+    const store = new PluginSettingsStore(apiOf(describe), emptyCrawler())
     const stale = store.load()
     await store.load()
     reject(new Error('late'))
@@ -163,19 +152,15 @@ describe('PluginSettingsStore', () => {
     expect(store.store.getSnapshot().namespaces.map(view => view.ns)).toEqual(['second'])
   })
 
-  it('surfaces a composition describe refusal as a page error', async () => {
+  it('degrades an unreachable crawler route to an empty composition', async () => {
     const describe = okDescribe([exposed('a')])
-    const store = new PluginSettingsStore({
-      settings: { describe },
-      composition: {
-        describe: vi.fn(() => Promise.resolve({
-          rpcId: 'c' as never,
-          result: { ok: false as const, error: { code: 'internal', message: 'no-crawler', details: {} } },
-        })),
-      },
-    } as never)
+    const store = new PluginSettingsStore(
+      { settings: { describe } } as never,
+      { describe: vi.fn(async () => []), update: vi.fn(), remove: vi.fn() },
+    )
     await store.load()
-    expect(store.store.getSnapshot()).toMatchObject({ status: 'error', error: 'no-crawler' })
+    expect(store.store.getSnapshot()).toMatchObject({ status: 'ready', error: null })
+    expect(store.store.getSnapshot().composition).toEqual([])
   })
 
   it('settingsMessage reads the Error message or stringifies any other value', () => {

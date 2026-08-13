@@ -9,14 +9,18 @@ The automatic DSH Web settings bundle. It combines the host-side configuration c
 ```text
 package.json              # host/client package and dsh.bundle/dshClient manifests
 cordis.patch.yml          # profile layer that mounts the crawler
-src/index.ts              # host crawler plugin
-src/client/               # browser settings page
+src/index.ts              # host crawler plugin (service provide + Fabric handler binding)
+src/routes.ts             # crawler-owned webserver composition route
+src/nav-scroll.ts         # browser bundle rewrite contract (serveBrowserTransform)
 src/invariant.ts          # crawler invariant companion
+src/client/               # browser settings page (store, section, crawler wire)
 lib/                      # generated host/client artifacts
-legacy/                   # source-compatible host integration patch for older DSH snapshots
 docs/                     # detailed host and client protocol references
-tests/host/                # crawler and composition tests
-tests/client/              # browser store and section tests
+tests/host/               # crawler, route, invariant, loader, and Fabric composition tests
+tests/client/             # browser store and section tests
+patches/                  # host patch contract (empty: zero out-of-package changes)
+scripts/                  # verify:self-contained, host patch extraction/applier
+.agents/skills/           # dsh-plugin-* contributor workflow
 ```
 
 The two runtime faces share one package identity so Git/profile installation has one root artifact. The browser face is exported as `@deepseek-ai/dsh-ex-setting/client` and is selected by the package's `dshClient` manifest.
@@ -32,11 +36,19 @@ Installing the bundle adds the `web-config-crawler` row. That is the deployment-
 
 The crawler redacts secrets, applies path-addressed edits with schema resolution, persists complete rows into the personal overlay, and removes rows to restore lower bundle layers. The browser page keeps settings namespaces and composition rows source-distinct and renders schema fields, secret controls, reset, revision conflicts, restart notices, and live invalidation refreshes.
 
-The bundle patch only composes this package. The settings/composition wire protocol, API proxy handlers, slot host, and browser shell must be supplied by the DSH version selected by the profile. The old host integration diff is retained in `legacy/` for older DSH snapshots and is not part of the new bundle contract.
+## External zero-change design
+
+This bundle ships with **zero out-of-package host changes**. Three mechanisms make that possible:
+
+- **Fabric exposure widening** — the crawler's `cordis.patch.yml` overrides the web roster's `cordis-fabric` row by id, carrying the static `web-config-crawler/exposed-namespaces` stub. The Fabric layer rewrites the gateway's private `exposedNamespaces()` decision at load time, and the crawler binds the matching `after` handler when it mounts (see `docs/web-config-crawler.md`).
+- **Crawler-owned composition route** — the browser half reads and edits composition rows through the crawler's own webserver route (`/dsh-config/crawler/composition`, `src/routes.ts`) instead of a gateway RPC domain, so the write path adds nothing to `apiproxy` or `connection`.
+- **Served browser rewrite** — the crawler serves the `ui-settings-general` client bundle through `serveBrowserTransform`, rewriting `SettingsRoot` to publish `web-config-crawler/nav-scroll`; the browser half registers the matching `before` handler that injects the dialog navigation scroll styles (see `docs/ui-settings-plugins.md`).
+
+The settings/composition wire protocol, API proxy handlers, slot host, and browser shell are supplied by the DSH version selected by the profile.
 
 ## Development
 
-A full typecheck expects sibling checkouts:
+A full typecheck expects sibling checkouts (host-provided `@deepseek-ai/*` packages are private and not installable from the registry):
 
 ```text
 ~/git/deepseek-harness
@@ -48,6 +60,7 @@ pnpm install
 pnpm run typecheck
 pnpm test
 pnpm run build
+pnpm run verify:self-contained
 ```
 
 The `prepare` script builds both host and browser entries directly from `src/`, so Git installation does not require sibling project references. pnpm 10 may require the profile to allow the package's prepare script; only approve a pinned, trusted checkout.
@@ -60,4 +73,3 @@ This bundle adds no model-visible prompt text or tools. It exposes configuration
 
 - Native Zod composition Config schemas remain file-configurable but are not rendered by the generic editor, which requires schemastery `toJSON()`.
 - The crawler is intentionally broad; deployments that do not want automatic composition editing should disable the row and keep the gateway allowlist posture.
-- Older DSH snapshots require the host integration patch in `legacy/` because a bundle cannot add missing wire or API source seams; the current `master` also predates the `composition` client face, so full typecheck requires the compatible web-config host change (for example `a9c30fa4`).

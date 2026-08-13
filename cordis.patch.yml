@@ -2,6 +2,30 @@
 # Exposing every settings namespace and composition Config is a deployment
 # decision represented by installing this bundle; later profile layers can
 # disable this row when a profile should retain the default allowlist.
+#
+# The crawler widens the gateway's settings exposure through the Fabric
+# layer: the web roster's `cordis-fabric` row carries the static
+# `web-config-crawler/exposed-namespaces` stub (overridden by id here so the
+# host tree never mounts the library package — the browser half mounts its
+# own FabricService copy, and the bridge is a globalThis singleton), and the
+# crawler binds the matching `after` handler when it mounts. The filePaths
+# convenience covers both launch forms under one patch id: the source launch
+# (tsx + tsconfig paths) loads src/api-proxy.ts while built deployments load
+# lib/index.js.
+- id: cordis-fabric
+  disabled: true
+  config:
+    fabric:
+      patches:
+        - id: web-config-crawler/exposed-namespaces
+          target:
+            module: '@deepseek-ai/dsh-host-apiproxy'
+            versionRange: '>=0.0.1-0'
+            filePaths: ['src/api-proxy.ts', 'lib/index.js']
+            functionQuery:
+              functionName: 'exposedNamespaces'
+              kind: 'Sync'
+          operation: after
 - insert:
     - id: web-config-crawler
       name: '@deepseek-ai/dsh-ex-setting'
