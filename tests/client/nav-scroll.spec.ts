@@ -16,7 +16,7 @@ describe('installNavScrollStyles', () => {
     const second = installNavScrollStyles()
     const elements = document.querySelectorAll(`style[data-fabric="${NAV_SCROLL_PATCH}"]`)
     expect(elements).toHaveLength(1)
-    expect(elements[0]?.textContent).toContain('[role="dialog"] [role="navigation"]')
+    expect(elements[0]?.textContent).toContain('[role="dialog"] nav')
     expect(elements[0]?.textContent).toContain('overflow-y: auto')
     first()
     second()

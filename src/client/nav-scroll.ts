@@ -19,8 +19,11 @@ export const NAV_SCROLL_FILE = 'lib/client.js'
 /** The component the host transforms (mirrors the host descriptor). */
 export const NAV_SCROLL_FUNCTION = 'SettingsRoot'
 
-/** The dialog navigation's semantic selector (the settings dialog's nav list). */
-const NAV_SELECTOR = '[role="dialog"] [role="navigation"]'
+/** The dialog navigation's semantic selector: ui-settings-general renders
+ * a native <nav> inside the role=dialog panel (no role="navigation"). The
+ * panel is fixed-height with overflow hidden, so the nav rail needs its
+ * own scroll container once the crawled catalog outgrows the dialog. */
+const NAV_SELECTOR = '[role="dialog"] nav'
 
 /** One injected style element (a singleton per document). */
 let styleElement: HTMLStyleElement | undefined
@@ -28,7 +31,6 @@ let styleElement: HTMLStyleElement | undefined
 /** The scroll rules for the settings dialog navigation. */
 const NAV_SCROLL_CSS = `
 ${NAV_SELECTOR} {
-  flex: 1;
   min-height: 0;
   overflow-y: auto;
   scrollbar-gutter: stable;
