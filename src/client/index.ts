@@ -9,9 +9,8 @@ import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client
 // Type-only: pulls the ctx.remote merge and the forwarded settings event key face
 // (the invalidation rides the remotes allowlist).
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
-import { FabricService, installBridge } from 'cordis-fabric/client'
 import { crawlerCompositionApi } from './crawler-api.ts'
-import { installNavScrollStyles, NAV_SCROLL_FILE, NAV_SCROLL_FUNCTION, NAV_SCROLL_MODULE, NAV_SCROLL_PATCH } from './nav-scroll.ts'
+import { installNavScrollStyles } from './nav-scroll.ts'
 // Type-only: pulls the shell's settings.section SlotMap merge.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // Type-only: pulls ctx.locale and the renderer's locale seat.
@@ -137,32 +136,13 @@ export async function apply(ctx: ClientContext): Promise<void> {
   })
   const t = ctx.locale.bind(NS)
 
-  // The crawler host serves the ui-settings-general bundle with a Fabric
-  // rewrite on SettingsRoot; this half mounts its own browser Fabric runtime
-  // (the bridge is a globalThis singleton, so the transformed bundle's
-  // publish calls reach it) and binds the matching `before` handler that
-  // injects the dialog navigation scroll styles. The web roster's
-  // cordis-fabric row stays disabled (the library package has no host
-  // plugin form); a composition that already mounts it reuses the service.
-  const existing = ctx.get('fabric')
-  if (existing === undefined) {
-    installBridge()
-    await ctx.plugin(FabricService)
-  }
-  const fabric = ctx.get('fabric') as { register(patch: unknown): string } | undefined
-  if (fabric !== undefined) {
-    fabric.register({
-      id: NAV_SCROLL_PATCH,
-      target: {
-        module: NAV_SCROLL_MODULE,
-        versionRange: '>=0.0.1-0',
-        filePath: NAV_SCROLL_FILE,
-        functionQuery: { functionName: NAV_SCROLL_FUNCTION, kind: 'Sync' },
-      },
-      operation: 'before',
-      handler: () => { installNavScrollStyles() },
-    })
-  }
+  // The crawler host serves the ui-settings-general bundle through a Fabric
+  // rewrite on SettingsRoot, but the browser-transform cannot match inside
+  // the ModuleLoader closure artifact (serveBundle degrades to 'raw'), so
+  // the nav-scroll styles are installed directly: they are static CSS that
+  // applies whenever the settings dialog renders. A composition that later
+  // binds the publish handler keeps this idempotent install harmless.
+  installNavScrollStyles()
 
   ctx.effect(() => {
     const live = new Map<string, LiveSection>()

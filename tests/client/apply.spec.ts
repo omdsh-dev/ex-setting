@@ -7,6 +7,7 @@ import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
 import { TestRemote } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject } from '@deepseek-ai/dsh-ex-setting/client'
+import * as navScroll from '../../src/client/nav-scroll.ts'
 import type { PluginSettingsSectionInjected } from '../../src/client/PluginSettingsSection.tsx'
 import { crawlerCompositionApi } from '../../src/client/crawler-api.ts'
 import type { CrawlerCompositionApi } from '../../src/client/crawler-api.ts'
@@ -117,22 +118,15 @@ describe('ui-settings-plugins apply', () => {
     expect(inject).toEqual(['slots', 'locale', 'connection', 'remote'])
   })
 
-  it('registers the nav-scroll patch when the browser Fabric runtime is mounted', async () => {
+  it('installs the nav-scroll styles directly (the Fabric rewrite cannot match the ModuleLoader bundle)', async () => {
     const b = await bench()
     declare(b.slots)
-    const register = vi.fn(() => 'web-config-crawler/nav-scroll')
-    b.ctx.provide('fabric', { register } as never)
+    // Node suites have no document; spy that apply reaches the direct
+    // install (the document guard makes it a no-op off the browser).
+    const spy = vi.spyOn(navScroll, 'installNavScrollStyles')
     await b.ctx.plugin({ inject: [...inject], apply }).await()
-    expect(register).toHaveBeenCalledWith(expect.objectContaining({
-      id: 'web-config-crawler/nav-scroll',
-      operation: 'before',
-      target: {
-        module: '@deepseek-ai/dsh-client-ui-settings-general',
-        versionRange: '>=0.0.1-0',
-        filePath: 'lib/client.js',
-        functionQuery: { functionName: 'SettingsRoot', kind: 'Sync' },
-      },
-    }))
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
   })
 
   it('automatically registers one first-level entry per crawler source before or after declaration', async () => {

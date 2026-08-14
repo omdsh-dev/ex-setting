@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises'
 import { basename, dirname, resolve as resolvePath } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import type { UserConfig } from 'tsdown'
 import { transform } from 'lightningcss'
 
@@ -31,9 +30,6 @@ export const CLIENT_EXTERNALS = [
   '@deepseek-ai/dsh-client-schema-form',
   '@deepseek-ai/dsh-client-runtime/client',
 ]
-
-/** Inline the trio's browser half from source (its own FabricService copy). */
-export const FABRIC_CLIENT_SOURCE = fileURLToPath(new URL('./node_modules/cordis-fabric/src/client/index.ts', import.meta.url))
 
 /** Package id the client bundle registers under (the module-table key). */
 export const CLIENT_ID = '@deepseek-ai/dsh-ex-setting'
@@ -76,15 +72,6 @@ export function clientBundle(entry: string, tsconfig?: string): UserConfig {
       intro: 'var module = { exports: {} }; var exports = module.exports;',
     },
     plugins: [{
-      // cordis-fabric/client is not a loader-table entry (its row is
-      // disabled), so the browser half inlines the trio's client source as
-      // its own FabricService copy instead of requiring it at runtime.
-      name: 'dsh-fabric-client-inline',
-      resolveId(source: string) {
-        if (source !== 'cordis-fabric/client') return null
-        return resolvePath(FABRIC_CLIENT_SOURCE)
-      },
-    }, {
       // CSS Modules compile to a hashed class map plus a <style data-plugin>
       // tag injected at factory execution (the loader removes plugin-owned
       // tags on unload), mirroring the official clientBundle preset.

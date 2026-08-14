@@ -46,7 +46,9 @@ function installed(): boolean {
  * @returns a disposer removing the styles.
  */
 export function installNavScrollStyles(): () => void {
-  if (installed()) return () => {}
+  // Node-side suites (and any headless context) have no document; the styles
+  // are a browser-only enhancement.
+  if (typeof document === 'undefined' || installed()) return () => {}
   styleElement = document.createElement('style')
   styleElement.setAttribute('data-fabric', NAV_SCROLL_PATCH)
   styleElement.textContent = NAV_SCROLL_CSS
