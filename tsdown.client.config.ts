@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { basename, dirname, resolve as resolvePath } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { UserConfig } from 'tsdown'
 import { transform } from 'lightningcss'
 
@@ -12,11 +13,15 @@ import { transform } from 'lightningcss'
  * external. Plain ESM bundles cannot load there.
  *
  * Externals are exactly the loader-table entries this bundle requires by
- * value: the platform modules (react, cordis, ui-slots, schema-form), the
+ * value: the platform modules (react, cordis, ui-slots, schema-form) and the
  * documented runtime store exemption (createSnapshotStore lives in
- * dsh-client-runtime pending its rehoming), and cordis-fabric/client (the
- * trio's own browser half, loaded as its own graph row). Everything else is
- * inlined; type-only imports never reach the bundle.
+ * dsh-client-runtime pending its rehoming). cordis-fabric/client is NOT a
+ * table entry — the cordis-fabric row is disabled (the library package has
+ * no host plugin form), so its browser factory never registers and a
+ * synchronous require would miss the table. The browser half mounts its own
+ * FabricService copy instead (the bridge is a globalThis singleton), so the
+ * trio's client source is inlined via alias. Everything else is inlined;
+ * type-only imports never reach the bundle.
  */
 export const CLIENT_EXTERNALS = [
   'react',
@@ -25,8 +30,10 @@ export const CLIENT_EXTERNALS = [
   '@deepseek-ai/dsh-client-ui-slots',
   '@deepseek-ai/dsh-client-schema-form',
   '@deepseek-ai/dsh-client-runtime/client',
-  'cordis-fabric/client',
 ]
+
+/** Inline the trio's browser half from source (its own FabricService copy). */
+export const FABRIC_CLIENT_SOURCE = fileURLToPath(new URL('./node_modules/cordis-fabric/src/client/index.ts', import.meta.url))
 
 /** Package id the client bundle registers under (the module-table key). */
 export const CLIENT_ID = '@deepseek-ai/dsh-ex-setting'
@@ -57,8 +64,10 @@ export function clientBundle(entry: string, tsconfig?: string): UserConfig {
     clean: false,
     external: CLIENT_EXTERNALS,
     // tsdown auto-externalizes package dependencies; the loader table is the
-    // only external source, everything else must inline.
-    noExternal: true,
+    // only external source, everything else must inline (function form — the
+    // boolean form trips tsdown's deps matcher when a resolveId plugin
+    // returns absolute paths).
+    noExternal: (id: string) => (CLIENT_EXTERNALS.includes(id) ? undefined : true),
     ...(tsconfig === undefined ? {} : { tsconfig }),
     outputOptions: {
       entryFileNames: 'client.js',
@@ -67,6 +76,15 @@ export function clientBundle(entry: string, tsconfig?: string): UserConfig {
       intro: 'var module = { exports: {} }; var exports = module.exports;',
     },
     plugins: [{
+      // cordis-fabric/client is not a loader-table entry (its row is
+      // disabled), so the browser half inlines the trio's client source as
+      // its own FabricService copy instead of requiring it at runtime.
+      name: 'dsh-fabric-client-inline',
+      resolveId(source: string) {
+        if (source !== 'cordis-fabric/client') return null
+        return resolvePath(FABRIC_CLIENT_SOURCE)
+      },
+    }, {
       // CSS Modules compile to a hashed class map plus a <style data-plugin>
       // tag injected at factory execution (the loader removes plugin-owned
       // tags on unload), mirroring the official clientBundle preset.
