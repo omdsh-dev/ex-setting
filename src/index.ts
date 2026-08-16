@@ -276,10 +276,10 @@ export async function apply(ctx: Context, config?: Config): Promise<void> {
     id: EXPOSED_NAMESPACES_PATCH,
     target: exposedNamespacesTarget,
     operation: 'after',
-    // The roster stub declares this patch `required`: the Fabric hard gate
-    // fails plain-`dsh` boots, and under fabric-dsh the load-time transform
-    // must have bound (the registry then registers the entry and the
-    // transformed gateway publishes to this handler).
+    // The row ships disabled and the fabric-dsh launcher enables it (the
+    // hooks exist by then); the stub is `required`, so a fabric-dsh boot
+    // where the load-time transform bound nothing fails loud instead of
+    // serving the default allowlist.
     /* v8 ignore next -- the closure runs only in the transformed child process, which v8 coverage never measures. */
     handler: (call: FabricCall) => { widenExposedNamespaces(call, crawler) },
   })

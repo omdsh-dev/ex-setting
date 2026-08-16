@@ -1,35 +1,33 @@
 # The bundle mounts the host crawler and its browser client half together.
 # Exposing every settings namespace and composition Config is a deployment
-# decision represented by installing this bundle; later profile layers can
-# disable this row when a profile should retain the default allowlist.
+# decision represented by installing this bundle.
 #
 # The crawler widens the gateway's settings exposure through the Fabric
-# layer: the web roster's `cordis-fabric` row carries the static
-# `web-config-crawler/exposed-namespaces` stub (overridden by id here so the
-# host tree never mounts the library package — the browser half mounts its
-# own FabricService copy, and the bridge is a globalThis singleton), and the
-# crawler binds the matching `after` handler when it mounts. The patch is
-# `required`: the Fabric hard gate (cordis-fabric-dsh's post-boot check)
-# fails any plain-`dsh` boot and any fabric-dsh boot where the transform
-# bound nothing — a profile that installs this bundle must launch through
-# fabric-dsh. The filePaths convenience covers both launch forms under one
+# layer, so the row is Fabric-required: it carries the static
+# `web-config-crawler/exposed-namespaces` stub under its OWN config and
+# ships DISABLED. The fabric-dsh launcher enables Fabric-required rows at
+# launch (the hooks exist by then), so a plain `dsh` boot skips this bundle
+# entirely instead of degrading; a profile that explicitly enables the row
+# without the launcher fails loud (the cordis-fabric-dsh post-boot gate).
+# The crawler binds the matching `after` handler when it mounts, and the
+# stub is `required`, so a fabric-dsh boot where the transform bound nothing
+# also fails. The filePaths convenience covers both launch forms under one
 # patch id: the source launch (tsx + tsconfig paths) loads src/api-proxy.ts
 # while built deployments load lib/index.js.
-- id: cordis-fabric
-  disabled: true
-  config:
-    fabric:
-      patches:
-        - id: web-config-crawler/exposed-namespaces
-          required: true
-          target:
-            module: '@deepseek-ai/dsh-host-apiproxy'
-            versionRange: '>=0.0.1-0'
-            filePaths: ['src/api-proxy.ts', 'lib/index.js']
-            functionQuery:
-              functionName: 'exposedNamespaces'
-              kind: 'Sync'
-          operation: after
 - insert:
     - id: web-config-crawler
       name: '@deepseek-ai/dsh-ex-setting'
+      disabled: true
+      config:
+        fabric:
+          patches:
+            - id: web-config-crawler/exposed-namespaces
+              required: true
+              target:
+                module: '@deepseek-ai/dsh-host-apiproxy'
+                versionRange: '>=0.0.1-0'
+                filePaths: ['src/api-proxy.ts', 'lib/index.js']
+                functionQuery:
+                  functionName: 'exposedNamespaces'
+                  kind: 'Sync'
+              operation: after
