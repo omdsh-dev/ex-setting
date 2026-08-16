@@ -10,10 +10,10 @@ importers:
     dependencies:
       cordis-fabric:
         specifier: git+https://github.com/dsh-external/fabric.git#main&path:/packages/cordis-fabric
-        version: git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)
+        version: git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)
       cordis-fabric-api:
         specifier: git+https://github.com/dsh-external/fabric.git#main&path:/packages/cordis-fabric-api
-        version: git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric-api(@deepseek-ai/cordis@4.0.1)(cordis-fabric@git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1))
+        version: git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric-api(@deepseek-ai/cordis@4.0.1)(cordis-fabric@git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1))
       js-yaml:
         specifier: ^4.2.0
         version: 4.3.1
@@ -1570,15 +1570,15 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
-  cordis-fabric-api@git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric-api:
-    resolution: {commit: 6427f9e8c1c48b7660eeefb25ac6970fd464adf2, path: /packages/cordis-fabric-api, repo: https://github.com/dsh-external/fabric.git, type: git}
+  cordis-fabric-api@git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric-api:
+    resolution: {commit: c723ff7da3ab817ea8403e8a47b1f7a600ad89a6, path: /packages/cordis-fabric-api, repo: https://github.com/dsh-external/fabric.git, type: git}
     version: 0.0.1-rc.2
     peerDependencies:
       '@deepseek-ai/cordis': ^4.0.1-0
       cordis-fabric: ^0.0.1-rc.2
 
-  cordis-fabric@git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric:
-    resolution: {commit: 6427f9e8c1c48b7660eeefb25ac6970fd464adf2, path: /packages/cordis-fabric, repo: https://github.com/dsh-external/fabric.git, type: git}
+  cordis-fabric@git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric:
+    resolution: {commit: c723ff7da3ab817ea8403e8a47b1f7a600ad89a6, path: /packages/cordis-fabric, repo: https://github.com/dsh-external/fabric.git, type: git}
     version: 0.0.1-rc.2
     peerDependencies:
       '@deepseek-ai/cordis': ^4.0.1-0
@@ -3780,12 +3780,12 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  cordis-fabric-api@git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric-api(@deepseek-ai/cordis@4.0.1)(cordis-fabric@git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)):
+  cordis-fabric-api@git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric-api(@deepseek-ai/cordis@4.0.1)(cordis-fabric@git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)):
     dependencies:
       '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
-      cordis-fabric: git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)
+      cordis-fabric: git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)
 
-  cordis-fabric@git+https://github.com/dsh-external/fabric.git#6427f9e8c1c48b7660eeefb25ac6970fd464adf2&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1):
+  cordis-fabric@git+https://github.com/dsh-external/fabric.git#c723ff7da3ab817ea8403e8a47b1f7a600ad89a6&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1):
     dependencies:
       '@apm-js-collab/code-transformer': 0.18.1
       '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
