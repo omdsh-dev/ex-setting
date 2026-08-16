@@ -65,6 +65,13 @@ pnpm run verify:self-contained
 
 The `prepare` script builds both host and browser entries directly from `src/`, so Git installation does not require sibling project references. pnpm 10 may require the profile to allow the package's prepare script; only approve a pinned, trusted checkout.
 
+## CI
+
+Two GitHub Actions workflows ship with the repository:
+
+- `.github/workflows/ci.yml` — every push to `main` and every pull request: frozen-lockfile install, `verify:self-contained`, and `prepare`. Typecheck, tests, and the development build need the sibling checkout (the private `@deepseek-ai/*` types resolve through its tsconfig paths), so they stay on development machines.
+- `.github/workflows/release.yml` — every push to `main`: runs `prepare`, packs the tarball (`pnpm pack`), and publishes it to a GitHub Release tagged `v<version>` from `package.json`. Bump `version` to cut a new release; re-pushing the same version refreshes that release's artifact.
+
 ## Model Experience
 
 This bundle adds no model-visible prompt text or tools. It exposes configuration only through the loopback Web settings surface; the owning DSH settings, composition, session, and permission services retain logging, redaction, and authorization semantics.

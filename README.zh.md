@@ -65,6 +65,13 @@ pnpm run verify:self-contained
 
 `prepare` 直接从 `src/` 构建 host 和 browser entry，因此 Git 安装不需要 sibling project references。pnpm 10 可能要求 profile 允许 prepare 脚本；只应批准固定且可信的 checkout。
 
+## CI
+
+仓库自带两个 GitHub Actions 工作流：
+
+- `.github/workflows/ci.yml` — 每次推送到 `main` 与每个 pull request：冻结 lockfile 安装、`verify:self-contained` 与 `prepare`。typecheck、测试与开发构建需要 sibling checkout（私有 `@deepseek-ai/*` 类型经其 tsconfig paths 解析），因此留在开发机上跑。
+- `.github/workflows/release.yml` — 每次推送到 `main`：跑 `prepare`、`pnpm pack` 打包 tarball，发布到以 `package.json` 版本号命名的 GitHub Release（`v<version>`）。提升 `version` 即发布新版本；同版本再次推送会刷新该 Release 的产物。
+
 ## 模型体验
 
 本组合包不添加模型可见的提示文本或工具。它只通过 loopback Web 设置面暴露配置；DSH settings、composition、session 与 permission 服务保留日志、脱敏和授权语义。

@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Typecheck, tests, and the development build resolve host-provided
+# @deepseek-ai/* types from a sibling deepseek-harness checkout (private,
+# not installable from the registry), so they cannot run on CI. This
+# workflow covers the self-contained surface: frozen install, the
+# repository-boundary verifier, and the prepare artifact build that the
+# release packs.
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify:self-contained
+      - run: pnpm run prepare
