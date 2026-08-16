@@ -24,9 +24,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      # Same node_modules-segment store issue as ci.yml: keep the store out
-      # of node_modules paths so the trio's prepare can strip its config.
-      - run: pnpm config set store-dir "$RUNNER_TEMP/pnpm-store"
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: pnpm run prepare

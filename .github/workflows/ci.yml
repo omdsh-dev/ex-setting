@@ -17,11 +17,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      # The runner's default pnpm store path contains a `node_modules`
-      # segment, which trips Node's native type stripping when the fabric
-      # trio's prepare loads its tsdown config — move the store to a clean
-      # path before the frozen install.
-      - run: pnpm config set store-dir "$RUNNER_TEMP/pnpm-store"
       - run: pnpm install --frozen-lockfile
       - run: pnpm run verify:self-contained
       - run: pnpm run typecheck
