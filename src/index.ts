@@ -276,9 +276,10 @@ export async function apply(ctx: Context, config?: Config): Promise<void> {
     id: EXPOSED_NAMESPACES_PATCH,
     target: exposedNamespacesTarget,
     operation: 'after',
-    // The binding is harmless without the load-time transform (the registry
-    // registers the entry; the transformed gateway simply never publishes);
-    // the child-process composition test exercises the real transformed call.
+    // The roster stub declares this patch `required`: the Fabric hard gate
+    // fails plain-`dsh` boots, and under fabric-dsh the load-time transform
+    // must have bound (the registry then registers the entry and the
+    // transformed gateway publishes to this handler).
     /* v8 ignore next -- the closure runs only in the transformed child process, which v8 coverage never measures. */
     handler: (call: FabricCall) => { widenExposedNamespaces(call, crawler) },
   })

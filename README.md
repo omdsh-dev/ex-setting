@@ -40,7 +40,7 @@ The crawler redacts secrets, applies path-addressed edits with schema resolution
 
 This bundle ships with **zero out-of-package host changes**. Three mechanisms make that possible:
 
-- **Fabric exposure widening** — the crawler's `cordis.patch.yml` overrides the web roster's `cordis-fabric` row by id, carrying the static `web-config-crawler/exposed-namespaces` stub. The Fabric layer rewrites the gateway's private `exposedNamespaces()` decision at load time, and the crawler binds the matching `after` handler when it mounts (see `docs/web-config-crawler.md`).
+- **Fabric exposure widening** — the crawler's `cordis.patch.yml` overrides the web roster's `cordis-fabric` row by id, carrying the static `web-config-crawler/exposed-namespaces` stub. The Fabric layer rewrites the gateway's private `exposedNamespaces()` decision at load time, and the crawler binds the matching `after` handler when it mounts. The stub is `required`: the Fabric hard gate fails any plain-`dsh` boot, so a profile with this bundle must launch through fabric-dsh (see `docs/web-config-crawler.md`).
 - **Crawler-owned composition route** — the browser half reads and edits composition rows through the crawler's own webserver route (`/dsh-config/crawler/composition`, `src/routes.ts`) instead of a gateway RPC domain, so the write path adds nothing to `apiproxy` or `connection`.
 - **Served browser rewrite** — the crawler serves the `ui-settings-general` client bundle through `serveBrowserTransform`, rewriting `SettingsRoot` to publish `web-config-crawler/nav-scroll`; the browser half registers the matching `before` handler that injects the dialog navigation scroll styles (see `docs/ui-settings-plugins.md`).
 

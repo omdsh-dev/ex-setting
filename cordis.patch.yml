@@ -8,16 +8,20 @@
 # `web-config-crawler/exposed-namespaces` stub (overridden by id here so the
 # host tree never mounts the library package — the browser half mounts its
 # own FabricService copy, and the bridge is a globalThis singleton), and the
-# crawler binds the matching `after` handler when it mounts. The filePaths
-# convenience covers both launch forms under one patch id: the source launch
-# (tsx + tsconfig paths) loads src/api-proxy.ts while built deployments load
-# lib/index.js.
+# crawler binds the matching `after` handler when it mounts. The patch is
+# `required`: the Fabric hard gate (cordis-fabric-dsh's post-boot check)
+# fails any plain-`dsh` boot and any fabric-dsh boot where the transform
+# bound nothing — a profile that installs this bundle must launch through
+# fabric-dsh. The filePaths convenience covers both launch forms under one
+# patch id: the source launch (tsx + tsconfig paths) loads src/api-proxy.ts
+# while built deployments load lib/index.js.
 - id: cordis-fabric
   disabled: true
   config:
     fabric:
       patches:
         - id: web-config-crawler/exposed-namespaces
+          required: true
           target:
             module: '@deepseek-ai/dsh-host-apiproxy'
             versionRange: '>=0.0.1-0'

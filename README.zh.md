@@ -40,7 +40,7 @@ Crawler 会脱敏 secret，按路径应用并通过 schema resolve 编辑，持�
 
 本组合包**零包外宿主改动**，靠三个机制实现：
 
-- **Fabric 暴露加宽** — crawler 的 `cordis.patch.yml` 按 id 覆盖 web roster 的 `cordis-fabric` 行，携带静态 `web-config-crawler/exposed-namespaces` stub。Fabric 层在加载时改写 gateway 私有的 `exposedNamespaces()` 决策，crawler 挂载时绑定对应的 `after` handler(见 `docs/web-config-crawler.md`)。
+- **Fabric 暴露加宽** — crawler 的 `cordis.patch.yml` 按 id 覆盖 web roster 的 `cordis-fabric` 行，携带静态 `web-config-crawler/exposed-namespaces` stub。Fabric 层在加载时改写 gateway 私有的 `exposedNamespaces()` 决策，crawler 挂载时绑定对应的 `after` handler。该 stub 标记 `required`:Fabric 硬门禁会拒绝任何普通 `dsh` 启动——装了本 bundle 的 profile 必须走 fabric-dsh 启动(见 `docs/web-config-crawler.md`)。
 - **crawler 自有的 composition 路由** — 浏览器侧通过 crawler 自己的 webserver 路由(`/dsh-config/crawler/composition`，`src/routes.ts`)读写 composition row，而不是 gateway RPC 域，因此写路径不向 `apiproxy` 或 `connection` 添加任何东西。
 - **served 浏览器重写** — crawler 通过 `serveBrowserTransform` 提供 `ui-settings-general` client bundle，把 `SettingsRoot` 重写为发布 `web-config-crawler/nav-scroll`；浏览器侧注册对应的 `before` handler 注入对话框导航滚动样式(见 `docs/ui-settings-plugins.md`)。
 
