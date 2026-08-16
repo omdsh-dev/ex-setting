@@ -13,7 +13,7 @@
  * @module @deepseek-ai/dsh-ex-setting/host-contracts
  */
 
-import type { Context } from 'cordis'
+import type { Context } from '@deepseek-ai/cordis'
 
 /** One registered settings namespace as surfaced to configuration UIs. */
 export interface HostSettingsDescriptor {
@@ -41,7 +41,7 @@ export interface HostInvariantsFace {
   register(packageName: string, installer: unknown): () => void
 }
 
-declare module 'cordis' {
+declare module '@deepseek-ai/cordis' {
   interface Context {
     /** The settings service, provided by the composed DSH profile. */
     settings: HostSettingsFace

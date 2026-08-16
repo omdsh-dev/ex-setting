@@ -94,7 +94,6 @@ for (const requiredPath of [
   'tests/host',
   'tests/client',
   'tests/host/fixtures',
-  'tests/fixtures',
   'docs/web-config-crawler.md',
   'docs/ui-settings-plugins.md',
   'patches/README.md',

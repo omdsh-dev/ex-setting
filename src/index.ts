@@ -36,7 +36,7 @@ import type { FabricCall, FabricTarget } from 'cordis-fabric-api/compat'
 import { load as loadYaml, dump as dumpYaml } from 'js-yaml'
 // Side-effect type import: the loader augments cordis's Fiber with `entry`
 // (the composition row behind each runtime fiber).
-import type {} from '@cordisjs/plugin-loader'
+import type {} from '@deepseek-ai/cordis-plugin-loader'
 
 /** One mounted plugin's composition configuration, redacted for the wire. */
 export interface CompositionConfigView {
@@ -149,32 +149,39 @@ interface RowFacts {
   value: unknown
 }
 
+/** The live loader entry surface the crawl reads (registry cordis has no fiber→entry link). */
+interface LoaderEntryLike {
+  options?: { id?: unknown }
+  fiber?: { config?: unknown; runtime?: { name?: unknown; Config?: unknown } } | null
+}
+
 /**
  * Enumerate every mounted plugin that carries a `Config` schema and a
- * composition row id, from the runtime registry.
+ * composition row id, from the live loader entries (each entry knows its
+ * fiber, the fiber its validated config and runtime schema).
  * @param ctx - host context.
- * @returns row facts in registry order.
+ * @returns row facts in loader order.
  */
 function rowFacts(ctx: Context): RowFacts[] {
   const rows: RowFacts[] = []
-  for (const [, runtime] of ctx.registry.entries()) {
-    if (runtime.Config === undefined) continue
+  const entries = (ctx as unknown as { loader?: { entries?: () => Iterable<LoaderEntryLike> } }).loader?.entries?.() ?? []
+  for (const entry of entries) {
+    const id = entry.options?.id
+    if (typeof id !== 'string') continue
+    const fiber = entry.fiber
+    if (fiber === undefined || fiber === null) continue
+    const schema = fiber.runtime?.Config as z<unknown> | undefined
     // Only schemastery Configs are schema-renderable: the redaction walker
     // and the editor rehydrate from `toJSON()` envelopes, which native zod
     // schemas lack. A native-zod row stays composition-configurable through
     // its file, just not through the generic Web editor.
-    const schema = runtime.Config as z<unknown>
-    if (typeof schema['toJSON'] !== 'function') continue
-    for (const fiber of runtime.fibers) {
-      const id = fiber.entry?.options.id
-      if (id === undefined || typeof id !== 'string') continue
-      rows.push({
-        id,
-        ...runtime.name === undefined ? {} : { name: runtime.name },
-        schema,
-        value: fiber.config,
-      })
-    }
+    if (schema === undefined || typeof schema['toJSON'] !== 'function') continue
+    rows.push({
+      id,
+      ...typeof fiber.runtime?.name === 'string' ? { name: fiber.runtime.name } : {},
+      schema,
+      value: fiber.config,
+    })
   }
   return rows
 }

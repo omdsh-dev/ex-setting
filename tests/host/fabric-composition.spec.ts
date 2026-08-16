@@ -49,10 +49,11 @@ describe('web-config-crawler Fabric composition', () => {
       after: ['plugin'],
       live: ['plugin', 'late'],
     })
-    // The src launch form bound under the filePaths stub: the private
+    // The built launch form bound under the filePaths stub (the target now
+    // resolves from the registry as lib/index.js): the private
     // `exposedNamespaces` decision inside createApiProxy was rewritten.
     expect(outcome.bindings['web-config-crawler/exposed-namespaces']).toEqual([
-      { module: '@deepseek-ai/dsh-host-apiproxy', file: 'src/api-proxy.ts', nodes: 1 },
+      { module: '@deepseek-ai/dsh-host-apiproxy', file: 'lib/index.js', nodes: 1 },
     ])
   }, 30_000)
 })

@@ -48,12 +48,7 @@ Settings/composition wire 协议、API proxy handler、slot host 和 browser she
 
 ## 开发
 
-完整 typecheck 需要 sibling checkout(宿主提供的 `@deepseek-ai/*` 包是私有的，无法从 registry 安装)：
-
-```text
-~/git/deepseek-harness
-~/git/ex-setting
-```
+宿主包(`@deepseek-ai/dsh-*`、`@deepseek-ai/cordis`)直接从 npm registry 安装:每个运行时 import 都以 `^0.1.0-rc.0` 系列声明 peer + dev 双依赖,开发解析全部来自本仓库自己的 `node_modules`——不再需要 sibling checkout。devDependencies 同时列全了测试专用宿主树的 peer 闭包(apiproxy 组合测试会 import 真实网关)。
 
 ```sh
 pnpm install
@@ -69,8 +64,8 @@ pnpm run verify:self-contained
 
 仓库自带两个 GitHub Actions 工作流：
 
-- `.github/workflows/ci.yml` — 每次推送到 `main` 与每个 pull request：冻结 lockfile 安装、`verify:self-contained` 与 `prepare`。typecheck、测试与开发构建需要 sibling checkout（私有 `@deepseek-ai/*` 类型经其 tsconfig paths 解析），因此留在开发机上跑。
-- `.github/workflows/release.yml` — 每次推送到 `main`：跑 `prepare`、`pnpm pack` 打包 tarball，发布到以 `package.json` 版本号命名的 GitHub Release（`v<version>`）。提升 `version` 即发布新版本；同版本再次推送会刷新该 Release 的产物。
+- `.github/workflows/ci.yml` — 每次推送到 `main` 与每个 pull request：冻结 lockfile 安装、`verify:self-contained`、typecheck、测试、构建与 `prepare`。
+- `.github/workflows/release.yml` — 每次推送到 `main`：构建并 `prepare`、`pnpm pack` 打包 tarball，发布到以 `package.json` 版本号命名的 GitHub Release（`v<version>`）。提升 `version` 即发布新版本；同版本再次推送会刷新该 Release 的产物。
 
 ## 模型体验
 

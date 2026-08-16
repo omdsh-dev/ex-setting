@@ -4,7 +4,7 @@
  * gateway's exposure Set — the decision the Fabric patch makes at call time.
  */
 import { describe, expect, it } from 'vitest'
-import { Context } from 'cordis'
+import { Context } from '@deepseek-ai/cordis'
 import z from 'schemastery'
 import { SettingsProvider, settingsNamespace, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
 import type { FabricCall } from 'cordis-fabric-api/compat'

@@ -13,7 +13,7 @@
 import z from 'schemastery'
 
 export default async () => {
-  const { Context } = await import('cordis')
+  const { Context } = await import('@deepseek-ai/cordis')
   const { SettingsProvider, settingsNamespace } = await import('@deepseek-ai/dsh-settings')
   const { createApiProxy } = await import('@deepseek-ai/dsh-host-apiproxy')
   const Crawler = await import('../../../src/index.ts')

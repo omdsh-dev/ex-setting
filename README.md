@@ -48,12 +48,7 @@ The settings/composition wire protocol, API proxy handlers, slot host, and brows
 
 ## Development
 
-A full typecheck expects sibling checkouts (host-provided `@deepseek-ai/*` packages are private and not installable from the registry):
-
-```text
-~/git/deepseek-harness
-~/git/ex-setting
-```
+The host packages (`@deepseek-ai/dsh-*`, `@deepseek-ai/cordis`) install from the npm registry: every runtime import declares them as peer + dev dependencies at the `^0.1.0-rc.0` series, and development imports resolve from this repository's own `node_modules` — no sibling checkout is required. The devDependencies also enumerate the peer closure of the test-only host tree (the apiproxy composition test imports the real gateway).
 
 ```sh
 pnpm install
@@ -69,8 +64,8 @@ The `prepare` script builds both host and browser entries directly from `src/`, 
 
 Two GitHub Actions workflows ship with the repository:
 
-- `.github/workflows/ci.yml` — every push to `main` and every pull request: frozen-lockfile install, `verify:self-contained`, and `prepare`. Typecheck, tests, and the development build need the sibling checkout (the private `@deepseek-ai/*` types resolve through its tsconfig paths), so they stay on development machines.
-- `.github/workflows/release.yml` — every push to `main`: runs `prepare`, packs the tarball (`pnpm pack`), and publishes it to a GitHub Release tagged `v<version>` from `package.json`. Bump `version` to cut a new release; re-pushing the same version refreshes that release's artifact.
+- `.github/workflows/ci.yml` — every push to `main` and every pull request: frozen-lockfile install, `verify:self-contained`, typecheck, tests, build, and `prepare`.
+- `.github/workflows/release.yml` — every push to `main`: runs the build and `prepare`, packs the tarball (`pnpm pack`), and publishes it to a GitHub Release tagged `v<version>` from `package.json`. Bump `version` to cut a new release; re-pushing the same version refreshes that release's artifact.
 
 ## Model Experience
 

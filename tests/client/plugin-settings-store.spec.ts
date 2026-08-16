@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /** Plugin settings catalog store: wire ordering, entry projection, and error paths. */
 import { describe, expect, it, vi } from 'vitest'
 import type { SettingsNamespaceView } from '@deepseek-ai/dsh-client-connection/client'

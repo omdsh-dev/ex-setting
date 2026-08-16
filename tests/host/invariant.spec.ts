@@ -1,6 +1,6 @@
 /** Invariant companion: the crawl must cover the registry whenever both are mounted. */
 import { describe, expect, it } from 'vitest'
-import { Context } from 'cordis'
+import { Context } from '@deepseek-ai/cordis'
 import z from 'schemastery'
 import InvariantService from '@deepseek-ai/dsh-invariants'
 import * as CrawlerInvariant from '../../src/invariant.ts'

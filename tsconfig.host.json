@@ -27,76 +27,12 @@
     "ignoreDeprecations": "6.0",
     "rootDir": "src",
     "outDir": "lib/types",
-    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo",
-    "paths": {
-      "@deepseek-ai/dsh-ex-setting": [
-        "src/index.ts"
-      ],
-      "@deepseek-ai/dsh-ex-setting/*": [
-        "src/*"
-      ],
-      "@deepseek-ai/dsh-home-paths": [
-        "../deepseek-harness/packages/util/home-paths/src/index.ts"
-      ],
-      "@deepseek-ai/dsh-settings": [
-        "../deepseek-harness/packages/settings/settings/src/index.ts"
-      ],
-      "@deepseek-ai/dsh-invariants": [
-        "../deepseek-harness/packages/runtime-diagnostics/invariants/src/index.ts"
-      ],
-      "cordis": [
-        "../deepseek-harness/vendor/cordis/src"
-      ],
-      "@deepseek-ai/cordis": [
-        "../deepseek-harness/vendor/cordis/src"
-      ],
-      "@deepseek-ai/schemastery": [
-        "../deepseek-harness/vendor/schemastery/src"
-      ],
-      "@deepseek-ai/cordis-plugin-loader": [
-        "../deepseek-harness/vendor/loader/src"
-      ],
-      "cordis-fabric": [
-        "./node_modules/cordis-fabric/src/index.ts"
-      ],
-      "cordis-fabric/client": [
-        "./node_modules/cordis-fabric/src/client/index.ts"
-      ],
-      "cordis-fabric-api": [
-        "./node_modules/cordis-fabric-api/src/index.ts"
-      ],
-      "cordis-fabric-api/compat": [
-        "./node_modules/cordis-fabric-api/src/compat.ts"
-      ],
-      "module-details-from-path": [
-        "./types/module-details-from-path.d.ts"
-      ]
-    }
+    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
   },
   "include": [
     "src/index.ts",
     "src/invariant.ts",
     "src/routes.ts",
     "src/nav-scroll.ts"
-  ],
-  "references": [
-    {
-      "path": "../deepseek-harness/vendor/cordis"
-    },
-    {
-      "path": "../deepseek-harness/vendor/loader"
-    },
-    {
-      "path": "../deepseek-harness/vendor/schemastery"
-    },
-    {
-      "path": "../deepseek-harness/packages/runtime-diagnostics/invariants"
-    },
-    {
-      "path": "../deepseek-harness/packages/util/home-paths"
-    },
-    {
-      "path": "../deepseek-harness/packages/settings/settings"
-    }
   ]
 }

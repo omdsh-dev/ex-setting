@@ -8,7 +8,7 @@
 import { EventEmitter } from 'node:events'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { describe, expect, it, vi } from 'vitest'
-import { Context } from 'cordis'
+import { Context } from '@deepseek-ai/cordis'
 import type { CompositionConfigView, WebConfigCrawler } from '../../src/index.ts'
 import { COMPOSITION_ROUTE, registerCompositionRoute } from '../../src/routes.ts'
 

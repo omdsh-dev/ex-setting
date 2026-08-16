@@ -2,36 +2,14 @@
   "files": [],
   "compilerOptions": {
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
-    "paths": {
-      "@deepseek-ai/cordis": ["../deepseek-harness/vendor/cordis/src"],
-      "@deepseek-ai/schemastery": ["../deepseek-harness/vendor/schemastery/src"],
-      "@deepseek-ai/cordis-plugin-loader": ["../deepseek-harness/vendor/loader/src"],
-      "@deepseek-ai/cordis-plugin-include": ["../deepseek-harness/vendor/include/src"],
-      "@deepseek-ai/dsh-api-remotes/client": ["../deepseek-harness/packages/api/remotes/src/client/index.ts"],
-      "@deepseek-ai/dsh-client-connection/client": ["../deepseek-harness/packages/client/connection/src/client/index.ts"],
-      "@deepseek-ai/dsh-client-locale/client": ["../deepseek-harness/packages/client/locale/src/client/index.ts"],
-      "@deepseek-ai/dsh-client-runtime/client": ["../deepseek-harness/packages/client/runtime/src/client/index.ts"],
-      "@deepseek-ai/dsh-client-schema-form": ["../deepseek-harness/packages/client/schema-form/src/index.ts"],
-      "@deepseek-ai/dsh-client-test-runtime": ["../deepseek-harness/packages/test-support/client-runtime/src/index.ts"],
-      "@deepseek-ai/dsh-client-ui-settings/client": ["../deepseek-harness/packages/client/ui-settings/src/client/index.ts"],
-      "@deepseek-ai/dsh-client-ui-slots": ["../deepseek-harness/packages/client/ui-slots/src/index.ts"],
-      "@deepseek-ai/dsh-home-paths": ["../deepseek-harness/packages/util/home-paths/src/index.ts"],
-      "@deepseek-ai/dsh-invariants": ["../deepseek-harness/packages/runtime-diagnostics/invariants/src/index.ts"],
-      "@deepseek-ai/dsh-settings": ["../deepseek-harness/packages/settings/settings/src/index.ts"],
-      "@deepseek-ai/dsh-settings-file": ["../deepseek-harness/packages/settings/settings-file/src/index.ts"],
-      "@deepseek-ai/dsh-host-apiproxy": ["../deepseek-harness/packages/host/apiproxy/src/index.ts"],
-      "@deepseek-ai/dsh-host-apiproxy/api": ["../deepseek-harness/packages/host/apiproxy/src/api/index.ts"],
-      "cordis": ["../deepseek-harness/vendor/cordis/src"],
-      "cordis-fabric": ["./node_modules/cordis-fabric/src/index.ts"],
-      "cordis-fabric/client": ["./node_modules/cordis-fabric/src/client/index.ts"],
-      "cordis-fabric-api": ["./node_modules/cordis-fabric-api/src/index.ts"],
-      "cordis-fabric-api/compat": ["./node_modules/cordis-fabric-api/src/compat.ts"],
-      "module-details-from-path": ["./types/module-details-from-path.d.ts"]
-    }
+    "ignoreDeprecations": "6.0"
   },
   "references": [
-    { "path": "./tsconfig.host.json" },
-    { "path": "./tsconfig.client.json" }
+    {
+      "path": "./tsconfig.host.json"
+    },
+    {
+      "path": "./tsconfig.client.json"
+    }
   ]
 }
