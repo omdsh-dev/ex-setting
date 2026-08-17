@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       cordis-fabric:
-        specifier: git+https://github.com/dsh-external/fabric.git#v0.0.3&path:/packages/cordis-fabric
-        version: git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)
+        specifier: https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz
+        version: https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1)
       cordis-fabric-api:
-        specifier: git+https://github.com/dsh-external/fabric.git#v0.0.3&path:/packages/cordis-fabric-api
-        version: git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric-api(@deepseek-ai/cordis@4.0.1)(cordis-fabric@git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1))
+        specifier: https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric-api.tgz
+        version: https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric-api.tgz(@deepseek-ai/cordis@4.0.1)(cordis-fabric@https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1))
       js-yaml:
         specifier: ^4.2.0
         version: 4.3.1
@@ -1570,15 +1570,15 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
-  cordis-fabric-api@git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric-api:
-    resolution: {commit: e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918, path: /packages/cordis-fabric-api, repo: https://github.com/dsh-external/fabric.git, type: git}
+  cordis-fabric-api@https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric-api.tgz:
+    resolution: {integrity: sha512-Npr3is91R/C5mACdDZXlapCgzt9DYNndUOCeBzZFI50Ev1gv4NtcPASEQcSd3P3/OtVC2T/4eOVYOpUcIBvsHQ==, tarball: https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric-api.tgz}
     version: 0.0.1-rc.2
     peerDependencies:
       '@deepseek-ai/cordis': ^4.0.1-0
       cordis-fabric: ^0.0.1-rc.2
 
-  cordis-fabric@git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric:
-    resolution: {commit: e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918, path: /packages/cordis-fabric, repo: https://github.com/dsh-external/fabric.git, type: git}
+  cordis-fabric@https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz:
+    resolution: {integrity: sha512-hb8a6c0Ru54AHT/WMVYcCBN6YBF6uuaHKTkBWkntvvoGQh8krBpJ/pqbyeG4v/94Z1CtfRMPkjIEKaC9+vjU/Q==, tarball: https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz}
     version: 0.0.1-rc.2
     peerDependencies:
       '@deepseek-ai/cordis': ^4.0.1-0
@@ -3780,12 +3780,12 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  cordis-fabric-api@git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric-api(@deepseek-ai/cordis@4.0.1)(cordis-fabric@git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)):
+  cordis-fabric-api@https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric-api.tgz(@deepseek-ai/cordis@4.0.1)(cordis-fabric@https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1)):
     dependencies:
       '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
-      cordis-fabric: git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1)
+      cordis-fabric: https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1)
 
-  cordis-fabric@git+https://github.com/dsh-external/fabric.git#e6100c0fbfc69e98ef7ff0b52fa2bfe7ec0da918&path:/packages/cordis-fabric(@deepseek-ai/cordis@4.0.1):
+  cordis-fabric@https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1):
     dependencies:
       '@apm-js-collab/code-transformer': 0.18.1
       '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)

@@ -72,8 +72,8 @@
     "react": "^18.2.0"
   },
   "dependencies": {
-    "cordis-fabric": "git+https://github.com/dsh-external/fabric.git#v0.0.3&path:/packages/cordis-fabric",
-    "cordis-fabric-api": "git+https://github.com/dsh-external/fabric.git#v0.0.3&path:/packages/cordis-fabric-api",
+    "cordis-fabric": "https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric.tgz",
+    "cordis-fabric-api": "https://github.com/omdsh-dev/fabric/releases/latest/download/cordis-fabric-api.tgz",
     "js-yaml": "^4.2.0",
     "schemastery": "^3.18.0"
   },
