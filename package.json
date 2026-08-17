@@ -72,8 +72,8 @@
     "react": "^18.2.0"
   },
   "dependencies": {
-    "cordis-fabric": "git+https://github.com/dsh-external/fabric.git#main&path:/packages/cordis-fabric",
-    "cordis-fabric-api": "git+https://github.com/dsh-external/fabric.git#main&path:/packages/cordis-fabric-api",
+    "cordis-fabric": "git+https://github.com/dsh-external/fabric.git#v0.0.3&path:/packages/cordis-fabric",
+    "cordis-fabric-api": "git+https://github.com/dsh-external/fabric.git#v0.0.3&path:/packages/cordis-fabric-api",
     "js-yaml": "^4.2.0",
     "schemastery": "^3.18.0"
   },
