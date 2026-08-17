@@ -1,9 +1,10 @@
 name: release
 
 # Every push to main builds the package and publishes the packed tarball to
-# a GitHub Release tagged v<version> (the version from package.json). Bump
-# the version to cut a new release; re-pushing the same version refreshes
-# that release's artifact.
+# a GitHub Release tagged v<version> (the version from package.json). The
+# artifact ships version-free as pkg.tgz (the fabric trio's convention).
+# Bump the version to cut a new release; re-pushing the same version
+# refreshes that release's artifact.
 on:
   push:
     branches: [main]
@@ -28,7 +29,9 @@ jobs:
       - run: pnpm run build
       - run: pnpm run prepare
       - name: Pack the artifact
-        run: pnpm pack --pack-destination dist
+        run: |
+          pnpm pack --pack-destination dist
+          mv dist/*.tgz dist/pkg.tgz
       - name: Publish to the version release
         env:
           GH_TOKEN: ${{ github.token }}
