@@ -4,8 +4,8 @@
  * RPC domain, so the crawler adds its write path without changing the
  * gateway. The route mounts only when the webserver capability is present
  * (non-web compositions skip it); the settings namespace read stays on the
- * gateway's `settings.describe` RPC, widened at call time by the Fabric
- * exposure patch.
+ * gateway's `settings.describe` RPC, which already serves registered
+ * namespaces.
  *
  * The route is registered as a fiber effect and answers:
  * - GET: the full redacted enumeration (`namespaces` + `composition`), the

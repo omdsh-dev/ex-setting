@@ -16,7 +16,7 @@ Required Cordis services belong in `inject`. Optional services are read through 
 
 ## Scalable repository structure
 
-This bundle is a dual-face package: the host crawler half lives at `src/index.ts` (Loader metadata, service provide, Fabric handler binding), `src/routes.ts` (the crawler's own webserver composition route), `src/nav-scroll.ts` (the browser bundle rewrite contract), and `src/invariant.ts`; the browser client half lives under `src/client/`. For a larger plugin, keep those responsibilities focused and group cohesive behavior under capability-named directories such as `src/<feature>/`. Add `src/services/` only when the package owns actual Cordis services.
+This bundle is a dual-face package: the host crawler half lives at `src/index.ts` (Loader metadata, service provide, and browser bundle serving), `src/routes.ts` (the crawler's own webserver composition route), `src/nav-scroll.ts` (the browser bundle rewrite contract), and `src/invariant.ts`; the browser client half lives under `src/client/`. For a larger plugin, keep those responsibilities focused and group cohesive behavior under capability-named directories such as `src/<feature>/`. Add `src/services/` only when the package owns actual Cordis services.
 
 The baseline test boundary separates host tests (`tests/host/`) from client tests (`tests/client/`): the crawler's real-loader and unit suites live under `tests/host/` with their child-process fixture under `tests/host/fixtures/`, and the browser store/section suites under `tests/client/`. Add feature-specific `tests/<feature>.spec.ts` files for focused behavior and stable visible-output fixtures under `tests/snapshots/`. Keep snapshot inventory and refresh rules explicit.
 

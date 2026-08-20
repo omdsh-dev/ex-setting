@@ -9,14 +9,14 @@ The automatic DSH Web settings bundle. It combines the host-side configuration c
 ```text
 package.json              # host/client package and dsh.bundle/dsh.client manifests
 cordis.patch.yml          # profile layer that mounts the crawler
-src/index.ts              # host crawler plugin (service provide + Fabric handler binding)
+src/index.ts              # host crawler plugin (service provide + browser bundle serving)
 src/routes.ts             # crawler-owned webserver composition route
 src/nav-scroll.ts         # browser bundle rewrite contract (serveBrowserTransform)
 src/invariant.ts          # crawler invariant companion
 src/client/               # browser settings page (store, section, crawler wire)
 lib/                      # generated host/client artifacts
 docs/                     # detailed host and client protocol references
-tests/host/               # crawler, route, invariant, loader, and Fabric composition tests
+tests/host/               # crawler, route, invariant, and loader tests
 tests/client/             # browser store and section tests
 patches/                  # host patch contract (empty: zero out-of-package changes)
 scripts/                  # verify:self-contained, host patch extraction/applier
@@ -29,7 +29,7 @@ The profile must already provide the `@oh-my-dsh/cordis-fabric` and `@oh-my-dsh/
 
 ## Bundle behavior
 
-Installing the bundle adds the `web-config-crawler` row. That is the deployment-level decision to expose all registered settings namespaces and schema-carrying composition rows through the Web configuration plane. A profile can disable it:
+Installing the bundle adds the `web-config-crawler` row. That is the deployment-level decision to mount the crawler, expose schema-carrying composition rows, and enable the composition editor through the Web configuration plane. The host gateway serves registered settings namespaces independently. A profile can disable the crawler row:
 
 ```yaml
 - id: web-config-crawler
@@ -42,7 +42,7 @@ The crawler redacts secrets, applies path-addressed edits with schema resolution
 
 This bundle ships with **zero out-of-package host changes**. Three mechanisms make that possible:
 
-- **Fabric exposure widening** — the crawler is Fabric-required: its `cordis.patch.yml` row carries the static `web-config-crawler/exposed-namespaces` stub under the row's own config and ships disabled, and the `fabric-dsh` launcher enables Fabric-required rows at launch. A plain `dsh` boot therefore skips this bundle entirely (the app runs, the crawler stays unloaded), while a fabric-dsh boot loads it with the hooks installed and the gateway's private `exposedNamespaces()` decision rewritten at load time; the crawler binds the matching `after` handler when it mounts, and the `required` stub makes a boot where the transform bound nothing fail loud (see `docs/web-config-crawler.md`).
+- **Host-served settings namespaces** — the DSH gateway serves every namespace registered by the active composition. Mounting this bundle adds the crawler and composition editor; it does not transform or replace the gateway's exposure decision.
 - **Crawler-owned composition route** — the browser half reads and edits composition rows through the crawler's own webserver route (`/dsh-config/crawler/composition`, `src/routes.ts`) instead of a gateway RPC domain, so the write path adds nothing to `apiproxy` or `connection`.
 - **Served browser rewrite** — the crawler serves the `ui-settings-general` client bundle through `serveBrowserTransform`, rewriting `SettingsRoot` to publish `web-config-crawler/nav-scroll`; the browser half registers the matching `before` handler that injects the dialog navigation scroll styles (see `docs/ui-settings-plugins.md`).
 

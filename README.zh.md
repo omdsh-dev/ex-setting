@@ -35,7 +35,7 @@ profile 必须已经提供 `@oh-my-dsh/cordis-fabric` 与 `@oh-my-dsh/cordis-fab
 
 ## 组合行为
 
-安装组合包后加入 `web-config-crawler` 行，表示部署决定通过 Web 配置面暴露所有已注册 settings namespace 和带 schema 的 composition row。profile 可以关闭：
+安装组合包后加入 `web-config-crawler` 行，表示部署决定挂载 crawler、通过 Web 配置面暴露带 schema 的 composition row 并启用 composition editor。宿主 gateway 会独立提供已注册的 settings namespace。profile 可以关闭 crawler 行：
 
 ```yaml
 - id: web-config-crawler
@@ -48,7 +48,7 @@ Crawler 会脱敏 secret，按路径应用并通过 schema resolve 编辑，持�
 
 本组合包**零包外宿主改动**，靠三个机制实现：
 
-- **Fabric 暴露加宽** — crawler 是 Fabric 依赖行:其 `cordis.patch.yml` 行在自身 config 下携带静态 `web-config-crawler/exposed-namespaces` stub 且默认 disabled,`fabric-dsh` 启动器会在启动时启用 Fabric 依赖行。普通 `dsh` 启动因此完全跳过本 bundle(应用照常运行、crawler 不加载);fabric-dsh 启动则在 hooks 就位后加载它,gateway 私有的 `exposedNamespaces()` 决策在加载时被改写,crawler 挂载时绑定对应的 `after` handler,`required` stub 让"transform 未绑定"的 fabric-dsh 启动直接失败(见 `docs/web-config-crawler.md`)。
+- **宿主提供 settings namespace** — DSH gateway 会提供当前 composition 注册的所有 namespace。挂载本组合包只增加 crawler 和 composition editor，不会 transform 或替换 gateway 的暴露决策。
 - **crawler 自有的 composition 路由** — 浏览器侧通过 crawler 自己的 webserver 路由(`/dsh-config/crawler/composition`，`src/routes.ts`)读写 composition row，而不是 gateway RPC 域，因此写路径不向 `apiproxy` 或 `connection` 添加任何东西。
 - **served 浏览器重写** — crawler 通过 `serveBrowserTransform` 提供 `ui-settings-general` client bundle，把 `SettingsRoot` 重写为发布 `web-config-crawler/nav-scroll`；浏览器侧注册对应的 `before` handler 注入对话框导航滚动样式(见 `docs/ui-settings-plugins.md`)。
 
