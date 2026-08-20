@@ -7,7 +7,7 @@ The automatic DSH Web settings bundle. It combines the host-side configuration c
 ## Repository shape
 
 ```text
-package.json              # host/client package and dsh.bundle/dshClient manifests
+package.json              # host/client package and dsh.bundle/dsh.client manifests
 cordis.patch.yml          # profile layer that mounts the crawler
 src/index.ts              # host crawler plugin (service provide + Fabric handler binding)
 src/routes.ts             # crawler-owned webserver composition route
@@ -23,7 +23,9 @@ scripts/                  # verify:self-contained, host patch extraction/applier
 .agents/skills/           # dsh-plugin-* contributor workflow
 ```
 
-The two runtime faces share one package identity so Git/profile installation has one root artifact. The browser face is exported as `@deepseek-ai/dsh-ex-setting/client` and is selected by the package's `dshClient` manifest.
+The two runtime faces share one package identity so the release/profile installation has one root artifact. The browser face is exported as `@deepseek-ai/dsh-ex-setting/client` and is selected by the package's `dsh.client` manifest.
+
+The profile must already provide the `cordis-fabric` and `cordis-fabric-api` 0.1.0 runtime pair. They are required peer dependencies of this plugin, not `dependencies` or `bundledDependencies`, so the release tarball never carries a second Fabric copy. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies`, so local installs and checks fail when either peer is unavailable. Install the Fabric release bundle in the consuming profile first; a package's workspace setting is not copied into that profile's pnpm configuration. The profile must still include that Fabric bundle because its `fabric-dsh` launcher installs the load-time hooks and bootstrap row.
 
 ## Bundle behavior
 
@@ -48,7 +50,7 @@ The settings/composition wire protocol, API proxy handlers, slot host, and brows
 
 ## Development
 
-The host packages (`@deepseek-ai/dsh-*`, `@deepseek-ai/cordis`) install from the npm registry: every runtime import declares them as peer + dev dependencies at the `^0.1.0-rc.0` series, and development imports resolve from this repository's own `node_modules` — no sibling checkout is required. The devDependencies also enumerate the peer closure of the test-only host tree (the apiproxy composition test imports the real gateway).
+The host packages (`@deepseek-ai/dsh-*`, `@deepseek-ai/cordis`) install from the npm registry: every runtime import declares them as peer + dev dependencies at the `^0.1.0-rc.0` series, and development imports resolve from this repository's own `node_modules` — no sibling checkout is required. The required Fabric peers are also present as pinned GitHub Release tarballs in `devDependencies` for local typechecking and tests; they are not included in the release package. The devDependencies also enumerate the peer closure of the test-only host tree (the apiproxy composition test imports the real gateway).
 
 ```sh
 pnpm install
@@ -58,14 +60,14 @@ pnpm run build
 pnpm run verify:self-contained
 ```
 
-The `prepare` script builds both host and browser entries directly from `src/`, so Git installation does not require sibling project references. pnpm 10 may require the profile to allow the package's prepare script; only approve a pinned, trusted checkout.
+The release artifact is built from `src/` before packing, so profile installation consumes ready-made `lib/` output and does not run an install-time `prepare` hook. A checkout is developed with the commands above and then packaged for the plugin channel.
 
 ## CI
 
 Two GitHub Actions workflows ship with the repository:
 
-- `.github/workflows/ci.yml` — every push to `main` and every pull request: frozen-lockfile install, `verify:self-contained`, typecheck, tests, build, and `prepare`.
-- `.github/workflows/release.yml` — every push to `main`: runs the build and `prepare`, packs the tarball (`pnpm pack`), and publishes it to a GitHub Release tagged `v<version>` from `package.json`. Bump `version` to cut a new release; re-pushing the same version refreshes that release's artifact.
+- `.github/workflows/ci.yml` — every push to `main` and every pull request: frozen-lockfile install, `verify:self-contained`, typecheck, tests, and build.
+- `.github/workflows/release.yml` — every push to `main`: verifies, typechecks, tests, builds, packs the ready-made tarball (`pnpm pack`), and publishes it to a GitHub Release tagged `v<version>` from `package.json`. Bump `version` to cut a new release; re-pushing the same version refreshes that release's artifact.
 
 ## Model Experience
 

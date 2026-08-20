@@ -48,12 +48,9 @@ pnpm test
 pnpm run build
 ```
 
-The self-contained prepare build is:
-
-```sh
-pnpm run prepare
-```
-
-It emits declarations and runtime JavaScript using only this repository's installed dependencies. `pnpm pack --dry-run --json` runs lifecycle scripts; inspect its final file list and restore a development build afterward when the pack lifecycle cleans or replaces generated files.
+The release build produces a ready-made artifact with the same commands and
+`pnpm pack --dry-run --json`; it emits declarations and runtime JavaScript using
+only this repository's installed dependencies. The release package declares Fabric as a required host peer, not a runtime or bundled dependency, so it never carries a second Fabric copy. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies` for local installation and verification. The consuming profile must install the Fabric release bundle separately; the package's workspace setting is not transferred to the profile's pnpm configuration. Profile/plugin installation consumes the packed artifact and does not run an install-time `prepare` hook. Inspect the final file list and restore a development build
+afterward when the pack lifecycle cleans or replaces generated files.
 
 A package is ready for Git or npm only when every manifest-declared runtime and type entry exists after the relevant consumer lifecycle. Publishing, pushing, tagging, and registry operations remain separately authorized actions.

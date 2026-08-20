@@ -51,14 +51,14 @@ Select the base profile that supplies the required services. A custom profile in
 
 Confirm `pnpm` is on `PATH`; `dsh plugin` forwards package-manager operations to it and fails before installation when it is unavailable.
 
-Install a packed artifact, registry version, or user-approved Git spec through DSH's profile package manager. Do not use a repository-relative `link:` or `file:` spec; the package must first prove that its own artifact is complete:
+Install a packed artifact, registry version, or user-approved Git spec through DSH's profile package manager. Do not use a repository-relative `link:` or `file:` spec; the package must first prove that its own artifact is complete. Before installing this package, verify that the profile already provides its required Fabric peers (`cordis-fabric` and `cordis-fabric-api`). Install the Fabric release bundle first rather than adding a second Fabric copy to this package. The package's own `strictPeerDependencies` setting applies only to this repository's workspace checks; it is not transferred to the consuming profile's pnpm configuration.
 
 ```sh
 pnpm pack
 # pass the generated archive, registry spec, or approved Git spec to dsh plugin
 ```
 
-For Git installation, use the user-approved Git spec. pnpm 10 and later block dependency lifecycle builds until allowed: a source package with `prepare` may fail the first installation and print the exact `allowBuilds` key. Add only that printed key to the profile's `pnpm-workspace.yaml`, then rerun the unchanged install. Do not guess or broadly allow build scripts.
+The release channel uses a ready-made tarball, so profile installation does not run a package `prepare` hook or require a lifecycle-build allowlist. If a source Git spec is explicitly approved for another package, follow that package's documented build contract rather than adding broad `allowBuilds` entries.
 
 A successful package-manager command should add a manifest-declared bundle to `dsh.profile.bundles`. A dependency without `dsh.bundle.patch` remains installed but inactive as a bundle; treat the warning as a manifest defect when activation was intended.
 
