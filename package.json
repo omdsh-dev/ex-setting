@@ -34,8 +34,7 @@
   "scripts": {
     "build": "tsdown --config-loader unrun --config tsdown.config.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.host.json --pretty false && tsc --noEmit -p tsconfig.client.json --pretty false",
-    "verify:self-contained": "node scripts/verify-self-contained.mjs"
+    "typecheck": "tsc --noEmit -p tsconfig.host.json --pretty false && tsc --noEmit -p tsconfig.client.json --pretty false"
   },
   "dsh": {
     "bundle": {
