@@ -31,7 +31,7 @@ scripts/                  # verify:self-contained、host patch 提取/应用
 dsh plugin --profile web add https://github.com/omdsh-dev/ex-setting/releases/latest/download/pkg.tgz
 ```
 
-profile 必须已经提供 `cordis-fabric` 与 `cordis-fabric-api` 0.1.0 runtime pair。它们是本插件的必需 peer dependency，不是 `dependencies` 或 `bundledDependencies`，因此 release tarball 不会携带第二份 Fabric。本仓库的 `pnpm-workspace.yaml` 已启用 `strictPeerDependencies`，本地安装和检查在任一 peer 缺失时会失败。请先在消费该插件的 profile 中安装 Fabric release bundle；包自身的 workspace 配置不会复制到该 profile 的 pnpm 配置中。profile 仍必须包含该 Fabric bundle，因为它的 `fabric-dsh` launcher 负责安装 load-time hooks 和 bootstrap row。
+profile 必须已经提供 `@oh-my-dsh/cordis-fabric` 与 `@oh-my-dsh/cordis-fabric-api` 0.1.1 runtime pair。它们是本插件的必需 peer dependency，不是 `dependencies` 或 `bundledDependencies`，因此 ex-setting release tarball 不会携带第二份 Fabric。本仓库的 `pnpm-workspace.yaml` 已启用 `strictPeerDependencies`，本地安装和检查在任一 peer 缺失时会失败。请先在消费该插件的 profile 中安装 `@oh-my-dsh/cordis-fabric-pack`；包自身的 workspace 配置不会复制到该 profile 的 pnpm 配置中。profile 仍必须包含该 Fabric pack，因为它的 `fabric-dsh` launcher 负责安装 load-time hooks 和 bootstrap row。
 
 ## 组合行为
 
@@ -56,7 +56,7 @@ Settings/composition wire 协议、API proxy handler、slot host 和 browser she
 
 ## 开发
 
-宿主包(`@deepseek-ai/dsh-*`、`@deepseek-ai/cordis`)直接从 npm registry 安装:每个运行时 import 都以 `^0.1.0-rc.0` 系列声明 peer + dev 双依赖,开发解析全部来自本仓库自己的 `node_modules`——不再需要 sibling checkout。必需的 Fabric peer 也在 `devDependencies` 中以固定 GitHub Release tarball 提供，用于本地类型检查和测试；它们不会进入 release package。devDependencies 同时列全了测试专用宿主树的 peer 闭包(apiproxy 组合测试会 import 真实网关)。
+宿主包(`@deepseek-ai/dsh-*`、`@deepseek-ai/cordis`)直接从 npm registry 安装:每个运行时 import 都以 `^0.1.0-rc.0` 系列声明 peer + dev 双依赖,开发解析全部来自本仓库自己的 `node_modules`——不再需要 sibling checkout。必需的 Fabric peer 也在 `devDependencies` 中以 npm semver 范围提供,用于本地类型检查和测试；它们不会进入 ex-setting release package。devDependencies 同时列全了测试专用宿主树的 peer 闭包(apiproxy 组合测试会 import 真实网关)。
 
 ```sh
 pnpm install

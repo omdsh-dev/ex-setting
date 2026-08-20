@@ -31,8 +31,8 @@ import type { SettingsNamespace } from '@deepseek-ai/dsh-settings'
 import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
 import { registerCompositionRoute } from './routes.ts'
 import { NAV_SCROLL_ROUTE, navScrollPatch } from './nav-scroll.ts'
-import { FabricCompatService } from 'cordis-fabric-api'
-import type { FabricCall, FabricTarget } from 'cordis-fabric'
+import { FabricCompatService } from '@oh-my-dsh/cordis-fabric-api'
+import type { FabricCall, FabricTarget } from '@oh-my-dsh/cordis-fabric'
 import { load as loadYaml, dump as dumpYaml } from 'js-yaml'
 // Side-effect type import: the loader augments cordis's Fiber with `entry`
 // (the composition row behind each runtime fiber).

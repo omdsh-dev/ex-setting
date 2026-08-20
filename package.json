@@ -64,8 +64,8 @@
     "@deepseek-ai/dsh-invariants": "^0.1.0-rc.0",
     "@deepseek-ai/dsh-settings": "^0.1.0-rc.0",
     "@deepseek-ai/cordis": "^4.0.1-0",
-    "cordis-fabric": "https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz",
-    "cordis-fabric-api": "https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz",
+    "@oh-my-dsh/cordis-fabric": "^0.1.1",
+    "@oh-my-dsh/cordis-fabric-api": "^0.1.1",
     "react": "^18.2.0"
   },
   "dependencies": {
@@ -79,8 +79,8 @@
     "@types/node": "^22.20.0",
     "@types/react": "~18.3.1",
     "@types/react-dom": "~18.3.0",
-    "cordis-fabric": "https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz",
-    "cordis-fabric-api": "https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz",
+    "@oh-my-dsh/cordis-fabric": "^0.1.1",
+    "@oh-my-dsh/cordis-fabric-api": "^0.1.1",
     "jsdom": "^27.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

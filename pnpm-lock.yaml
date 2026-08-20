@@ -162,6 +162,12 @@ importers:
       '@deepseek-ai/dsh-workspace':
         specifier: ^0.1.0-rc.0
         version: 0.1.0-rc.6(1cc52dfbc7fc17aad1b6b9c3711f64fc)
+      '@oh-my-dsh/cordis-fabric':
+        specifier: ^0.1.1
+        version: 0.1.1(@deepseek-ai/cordis@4.0.1)
+      '@oh-my-dsh/cordis-fabric-api':
+        specifier: ^0.1.1
+        version: 0.1.1(@deepseek-ai/cordis@4.0.1)(@oh-my-dsh/cordis-fabric@0.1.1(@deepseek-ai/cordis@4.0.1))
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
@@ -180,12 +186,6 @@ importers:
       '@types/react-dom':
         specifier: ~18.3.0
         version: 18.3.0
-      cordis-fabric:
-        specifier: https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz
-        version: https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1)
-      cordis-fabric-api:
-        specifier: https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz
-        version: https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz(@deepseek-ai/cordis@4.0.1)(cordis-fabric@https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1))
       jsdom:
         specifier: ^27.4.0
         version: 27.4.0(supports-color@7.1.0)
@@ -1070,6 +1070,17 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
+  '@oh-my-dsh/cordis-fabric-api@0.1.1':
+    resolution: {integrity: sha512-KEWdO2+DWw0sbvXBxcTB7is+nW677yQLB3Qkx0boAOXvUusJpx8Yc6IRKYkuQScTJUEG4jcXeMBAzJPGzONLxQ==}
+    peerDependencies:
+      '@deepseek-ai/cordis': ^4.0.1-0
+      '@oh-my-dsh/cordis-fabric': ^0.1.0
+
+  '@oh-my-dsh/cordis-fabric@0.1.1':
+    resolution: {integrity: sha512-4yovyRHSyOGaRvLlplk62kus0WXcdYAlGzKt/2FMCCo4KisYYTh7GsPq9t2HUbG3xynsGhem7lQVsnlYA6StBw==}
+    peerDependencies:
+      '@deepseek-ai/cordis': ^4.0.1-0
+
   '@oxc-project/types@0.143.0':
     resolution: {integrity: sha512-u6JZdLBTLotrNC9Vd6vPssINdzcCzleKAH6EJKImQb7GtYvX5keN2dxkoK44stCc4tffE6QQRtZTXVSzsLUlWA==}
 
@@ -1541,19 +1552,6 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
-
-  cordis-fabric-api@https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz:
-    resolution: {integrity: sha512-bCfyWjL70OhMQAiHL84i1a2lUoBDZiv3Lyizuo2FutyM8bxtfBQSq9mVXows0F3nLtIolGBDKD/R5k8bVWbONw==, tarball: https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz}
-    version: 0.1.0
-    peerDependencies:
-      '@deepseek-ai/cordis': ^4.0.1-0
-      cordis-fabric: ^0.1.0
-
-  cordis-fabric@https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz:
-    resolution: {integrity: sha512-MYVQQkVfycwDEWD+mSLVLEO5yvLHqtGdAlyPcQQ0eXEQAMicrkxKegvok4fjBCNGDAEWOtg+IsqPusTq142vtQ==, tarball: https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz}
-    version: 0.1.0
-    peerDependencies:
-      '@deepseek-ai/cordis': ^4.0.1-0
 
   cosmokit@1.8.1:
     resolution: {integrity: sha512-PDBv4l90xZKrUsZ0vtoycgZpO/j4iFsqJXrAxsyBDsnQRI7ZMJXIjgDJsKNjd5L8jnVnnlrDCdhkFbTncgCVjQ==}
@@ -3334,6 +3332,19 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
+  '@oh-my-dsh/cordis-fabric-api@0.1.1(@deepseek-ai/cordis@4.0.1)(@oh-my-dsh/cordis-fabric@0.1.1(@deepseek-ai/cordis@4.0.1))':
+    dependencies:
+      '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
+      '@oh-my-dsh/cordis-fabric': 0.1.1(@deepseek-ai/cordis@4.0.1)
+
+  '@oh-my-dsh/cordis-fabric@0.1.1(@deepseek-ai/cordis@4.0.1)':
+    dependencies:
+      '@apm-js-collab/code-transformer': 0.18.1
+      '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
+      module-details-from-path: 1.0.4
+      node-addon-require-builtin: 0.1.4
+      typescript: 6.0.3
+
   '@oxc-project/types@0.143.0': {}
 
   '@quansync/fs@1.0.0':
@@ -3698,19 +3709,6 @@ snapshots:
   commander@8.3.0: {}
 
   convert-source-map@2.0.0: {}
-
-  cordis-fabric-api@https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz(@deepseek-ai/cordis@4.0.1)(cordis-fabric@https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1)):
-    dependencies:
-      '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
-      cordis-fabric: https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1)
-
-  cordis-fabric@https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz(@deepseek-ai/cordis@4.0.1):
-    dependencies:
-      '@apm-js-collab/code-transformer': 0.18.1
-      '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
-      module-details-from-path: 1.0.4
-      node-addon-require-builtin: 0.1.4
-      typescript: 6.0.3
 
   cosmokit@1.8.1: {}
 
