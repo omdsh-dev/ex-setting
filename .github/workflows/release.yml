@@ -2,8 +2,8 @@ name: release
 
 # Every push to main builds the package and publishes the packed tarball to
 # a GitHub Release tagged v<version> (the version from package.json). The
-# artifact ships version-free as pkg.tgz (the fabric trio's convention).
-# Bump the version to cut a new release; re-pushing the same version
+# artifact ships version-free as pkg.tgz, ready to install without a prepare
+# script. Bump the version to cut a new release; re-pushing the same version
 # refreshes that release's artifact.
 on:
   push:
@@ -26,8 +26,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify:self-contained
+      - run: pnpm run typecheck
+      - run: pnpm test
       - run: pnpm run build
-      - run: pnpm run prepare
       - name: Pack the artifact
         run: |
           pnpm pack --pack-destination dist

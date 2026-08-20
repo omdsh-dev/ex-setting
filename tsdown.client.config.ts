@@ -41,36 +41,41 @@ const CSS_VIRTUAL_SUFFIX = '.mjs'
 /**
  * The browser client bundle config: closure-factory artifact with the loader
  * table external and CSS Modules compiled inline.
- * @param entry - the client entry (source or lib/types depending on the build).
- * @param tsconfig - optional tsconfig override (consumer-side prepare builds).
+ * @param entry - the client entry.
+ * @param tsconfig - TypeScript config used for the client source.
+ * @param declarations - emit a temporary ESM runtime plus bundled declarations;
+ * the following closure build overwrites only the runtime file.
  */
-export function clientBundle(entry: string, tsconfig?: string): UserConfig {
+export function clientBundle(entry: string, tsconfig?: string, declarations = false): UserConfig {
   return {
     entry: { client: entry },
     outDir: 'lib',
-    format: 'cjs',
+    format: declarations ? 'esm' : 'cjs',
     platform: 'browser',
     target: 'es2022',
-    // Types ship from lib/types (tsc); dts here would wrap the banner/footer
-    // into .d.cts and break parsing.
-    dts: false,
+    // The closure build must stay declaration-free: its banner/footer are
+    // executable wrapper code, not valid TypeScript declaration syntax.
+    dts: declarations,
     // Plugin code is fetched outside Vite's module graph, so its own bundle
     // must carry the TS/TSX mapping consumed by browser profiling tools.
     sourcemap: true,
     clean: false,
-    external: CLIENT_EXTERNALS,
     // tsdown auto-externalizes package dependencies; the loader table is the
-    // only external source, everything else must inline (function form — the
-    // boolean form trips tsdown's deps matcher when a resolveId plugin
-    // returns absolute paths).
-    noExternal: (id: string) => (CLIENT_EXTERNALS.includes(id) ? undefined : true),
-    ...(tsconfig === undefined ? {} : { tsconfig }),
-    outputOptions: {
-      entryFileNames: 'client.js',
-      banner: `window.__ModuleLoader__.load({ id: ${JSON.stringify(CLIENT_ID)}, factory: (require) => {`,
-      footer: 'return module.exports; } });',
-      intro: 'var module = { exports: {} }; var exports = module.exports;',
+    // only external source, everything else must inline.
+    deps: {
+      neverBundle: CLIENT_EXTERNALS,
+      alwaysBundle: (id: string) => (CLIENT_EXTERNALS.includes(id) ? undefined : true),
+      dts: { neverBundle: true },
     },
+    ...(tsconfig === undefined ? {} : { tsconfig }),
+    outputOptions: declarations
+      ? {}
+      : {
+          entryFileNames: 'client.js',
+          banner: `window.__ModuleLoader__.load({ id: ${JSON.stringify(CLIENT_ID)}, factory: (require) => {`,
+          footer: 'return module.exports; } });',
+          intro: 'var module = { exports: {} }; var exports = module.exports;',
+        },
     plugins: [{
       // CSS Modules compile to a hashed class map plus a <style data-plugin>
       // tag injected at factory execution (the loader removes plugin-owned

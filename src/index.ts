@@ -31,8 +31,8 @@ import type { SettingsNamespace } from '@deepseek-ai/dsh-settings'
 import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
 import { registerCompositionRoute } from './routes.ts'
 import { NAV_SCROLL_ROUTE, navScrollPatch } from './nav-scroll.ts'
-import FabricCompatService from 'cordis-fabric-api/compat'
-import type { FabricCall, FabricTarget } from 'cordis-fabric-api/compat'
+import { FabricCompatService } from 'cordis-fabric-api'
+import type { FabricCall, FabricTarget } from 'cordis-fabric'
 import { load as loadYaml, dump as dumpYaml } from 'js-yaml'
 // Side-effect type import: the loader augments cordis's Fiber with `entry`
 // (the composition row behind each runtime fiber).
@@ -291,9 +291,12 @@ export async function apply(ctx: Context, config?: Config): Promise<void> {
     handler: (call: FabricCall) => { widenExposedNamespaces(call, crawler) },
   })
   // The browser half injects the settings-navigation scroll styles through a
-  // `before` handler on the transformed ui-settings-general bundle; serve
-  // the transformed bundle only when the webserver capability is present.
-  if (ctx.get('webServer') !== undefined) {
+  // `before` handler on the transformed ui-settings-general bundle. The
+  // runtime serving primitive resolves the target package through the Loader
+  // composition anchor. Direct non-Loader mounts can provide the crawler
+  // without either optional web capability, so skip this seam unless both
+  // prerequisites are present.
+  if (ctx.get('webServer') !== undefined && ctx.baseUrl !== undefined) {
     compat.serveBundle({
       route: NAV_SCROLL_ROUTE,
       patch: navScrollPatch,

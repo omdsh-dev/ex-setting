@@ -6,12 +6,11 @@
  * src/routes.ts, src/nav-scroll.ts, src/invariant.ts) and a browser client
  * half (src/client/). Host-provided packages (`@deepseek-ai/dsh-*`, the
  * `@deepseek-ai/cordis` vendor) are private and not installable from the
- * registry; per the documented development contract they resolve from a
- * sibling `deepseek-harness` checkout through tsconfig paths, and the
- * Fabric trio arrives through git subdirectory specs. This script verifies
- * everything that must hold without the sibling: repository layout, no
- * absolute workstation paths, no non-`@deepseek-ai/*` bare imports beyond
- * the declared registry/git dependencies, and manifest integrity.
+ * registry; the Fabric trio arrives as prebuilt GitHub Release tarballs. This
+ * script verifies everything that must hold without a sibling checkout:
+ * repository layout, no absolute workstation paths, no non-`@deepseek-ai/*` bare
+ * imports beyond the declared registry/tarball dependencies, and manifest
+ * integrity.
  * @module scripts/verify-self-contained
  */
 
@@ -102,24 +101,32 @@ for (const requiredPath of [
 }
 
 const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
-const gitSpecPattern = /^github:dsh-external\/fabric#([^&]*)&path:\/(packages\/cordis-fabric(?:-api)?)$/
+const fabricNames = ['cordis-fabric', 'cordis-fabric-api']
+const fabricReleaseSpecs = new Map([
+  ['cordis-fabric', 'https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric.tgz'],
+  ['cordis-fabric-api', 'https://github.com/omdsh-dev/fabric/releases/download/v0.1.0/cordis-fabric-api.tgz'],
+])
+for (const name of fabricNames) {
+  if (packageJson.peerDependencies?.[name] !== '^0.1.0') failures.push(`package.json: ${name} must be a required ^0.1.0 peer dependency`)
+  if (packageJson.dependencies?.[name] !== undefined) failures.push(`package.json: ${name} must not be a runtime dependency`)
+  if (packageJson.bundledDependencies?.includes(name)) failures.push(`package.json: ${name} must not be bundled into ex-setting`)
+  if (packageJson.devDependencies?.[name] !== fabricReleaseSpecs.get(name)) {
+    failures.push(`package.json: devDependencies.${name} must use the Fabric release tarball ${fabricReleaseSpecs.get(name)}`)
+  }
+}
 for (const field of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
   for (const [name, spec] of Object.entries(packageJson[field] ?? {})) {
     if (/^(?:file|link|portal|workspace):/i.test(spec) || spec.startsWith('.') || isAbsolute(spec)) {
       failures.push(`package.json: ${field}.${name} uses non-registry spec ${spec}`)
-    } else if (/^github:/i.test(spec)) {
-      const match = gitSpecPattern.exec(spec)
-      if (match === null) failures.push(`package.json: ${field}.${name} uses an unrecognized git spec ${spec}`)
-      else if (match[1] !== 'main') failures.push(`package.json: ${field}.${name} git spec must track main: ${spec}`)
     }
   }
 }
 
-// Host-provided packages resolve from the sibling checkout through tsconfig
-// paths; every OTHER non-relative import must be declared above. Any
-// `@deepseek-ai/*` import is accepted when at least one `@deepseek-ai`
-// package is declared (they share one resolution contract), and the Fabric
-// trio's package names are allowed through their git specs.
+// Host-provided packages resolve from the registry; every OTHER non-relative
+// import must be declared above. Any `@deepseek-ai/*` import is accepted when
+// at least one `@deepseek-ai` package is declared (they share one resolution
+// contract). Fabric imports are required peers and are available in this
+// checkout through their pinned devDependency tarballs.
 const declared = new Set([
   ...Object.keys(packageJson.dependencies ?? {}),
   ...Object.keys(packageJson.devDependencies ?? {}),

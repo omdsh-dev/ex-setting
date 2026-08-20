@@ -11,7 +11,7 @@
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { FabricPatchStub } from 'cordis-fabric'
-import { runPatchFixture } from 'cordis-fabric/testkit'
+import { runPatchFixture } from 'cordis-fabric/testing/testkit'
 
 /** The fixture entry, as an absolute file URL the child can import. */
 const entry = new URL('./fixtures/check-fabric.ts', import.meta.url).href

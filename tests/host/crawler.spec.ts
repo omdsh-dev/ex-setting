@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import z from 'schemastery'
 import { SettingsProvider, settingsNamespace, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
-import type { FabricCall } from 'cordis-fabric-api/compat'
+import type { FabricCall } from 'cordis-fabric'
 import {
   apply, inject, widenExposedNamespaces, exposedNamespacesTarget, EXPOSED_NAMESPACES_PATCH,
   type WebConfigCrawler,
