@@ -2,9 +2,12 @@ import { defineConfig } from 'tsdown'
 import { clientBundle } from './tsdown.client.config.ts'
 
 /**
- * Build the host and browser faces directly from `src/`. Declarations are
- * emitted by tsdown alongside the runtime entries; TypeScript is used only for
- * the separate no-emit typecheck script.
+ * Build the host and browser declaration faces directly from `src/`. The
+ * closure-factory browser runtime is emitted by the second, sequential
+ * `tsdown.client.runtime.config.ts` invocation in the package build script;
+ * keeping it out of this config prevents the declaration build from racing
+ * with and overwriting `lib/client.js`. TypeScript is used only for the
+ * separate no-emit typecheck script.
  */
 export default [
   defineConfig({
@@ -23,5 +26,4 @@ export default [
     tsconfig: 'tsconfig.host.json',
   }),
   clientBundle('src/client/index.ts', 'tsconfig.client.json', true),
-  clientBundle('src/client/index.ts', 'tsconfig.client.json'),
 ]

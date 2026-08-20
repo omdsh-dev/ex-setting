@@ -44,7 +44,8 @@ const CSS_VIRTUAL_SUFFIX = '.mjs'
  * @param entry - the client entry.
  * @param tsconfig - TypeScript config used for the client source.
  * @param declarations - emit a temporary ESM runtime plus bundled declarations;
- * the following closure build overwrites only the runtime file.
+ * the package build's second sequential runtime pass overwrites only the
+ * runtime file.
  */
 export function clientBundle(entry: string, tsconfig?: string, declarations = false): UserConfig {
   return {

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-ex-setting",
   "description": "Automatic Web settings and composition configuration bundle for DSH",
-  "version": "0.0.3",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -32,7 +32,7 @@
   ],
   "license": "BSD-3-Clause",
   "scripts": {
-    "build": "tsdown --config-loader unrun --config tsdown.config.ts",
+    "build": "tsdown --config-loader unrun --config tsdown.config.ts && tsdown --config-loader unrun --config tsdown.client.runtime.config.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.host.json --pretty false && tsc --noEmit -p tsconfig.client.json --pretty false"
   },
