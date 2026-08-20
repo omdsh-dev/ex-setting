@@ -23,7 +23,7 @@ scripts/                  # verify:self-contained、host patch 提取/应用
 .agents/skills/           # dsh-plugin-* 贡献工作流
 ```
 
-两个 runtime face 共享一个 package identity，因此 release/profile 安装只有一个 root 产物。浏览器 face 通过 `@deepseek-ai/dsh-ex-setting/client` 导出，并由 package 的 `dsh.client` 清单选择。
+两个 runtime face 共享一个 package identity，因此 release/profile 安装只有一个 root 产物。浏览器 face 通过 `@deepseek-ai/dsh-ex-setting/client` 导出，并由 package 的 `dsh.client` 清单选择。纯 schema-form 路径操作会被内联进浏览器 closure，不再要求 profile 提供独立的动态 `@deepseek-ai/dsh-client-schema-form` row，因此也兼容由 settings UI 自己提供 schema service 的 profile。
 
 通过官方插件通道安装现成的 release 产物：
 

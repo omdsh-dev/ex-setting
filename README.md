@@ -23,7 +23,7 @@ scripts/                  # verify:self-contained, host patch extraction/applier
 .agents/skills/           # dsh-plugin-* contributor workflow
 ```
 
-The two runtime faces share one package identity so the release/profile installation has one root artifact. The browser face is exported as `@deepseek-ai/dsh-ex-setting/client` and is selected by the package's `dsh.client` manifest.
+The two runtime faces share one package identity so the release/profile installation has one root artifact. The browser face is exported as `@deepseek-ai/dsh-ex-setting/client` and is selected by the package's `dsh.client` manifest. Its pure schema-form path helpers are inlined into the browser closure instead of requiring a separate dynamic `@deepseek-ai/dsh-client-schema-form` row, which keeps the release compatible with profiles whose settings UI owns the schema service.
 
 The profile must already provide the `@oh-my-dsh/cordis-fabric` and `@oh-my-dsh/cordis-fabric-api` 0.1.1 runtime pair. They are required peer dependencies of this plugin, not `dependencies` or `bundledDependencies`, so the ex-setting release tarball never carries a second Fabric copy. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies`, so local installs and checks fail when either peer is unavailable. Install `@oh-my-dsh/cordis-fabric-pack` in the consuming profile first; a package's workspace setting is not copied into that profile's pnpm configuration. The profile must still include that Fabric pack because its `fabric-dsh` launcher installs the load-time hooks and bootstrap row.
 

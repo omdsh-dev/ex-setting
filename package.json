@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-ex-setting",
   "description": "Automatic Web settings and composition configuration bundle for DSH",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -46,8 +46,7 @@
         "@deepseek-ai/dsh-client-ui-settings",
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-connection",
-        "@deepseek-ai/dsh-api-remotes",
-        "@deepseek-ai/dsh-client-schema-form"
+        "@deepseek-ai/dsh-api-remotes"
       ],
       "platform": "web"
     }
@@ -57,7 +56,6 @@
     "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.0",
     "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.0",
     "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.0",
-    "@deepseek-ai/dsh-client-schema-form": "^0.1.0-rc.0",
     "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.0",
     "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.0",
     "@deepseek-ai/dsh-home-paths": "^0.1.0-rc.0",

@@ -12,14 +12,15 @@ import { transform } from 'lightningcss'
  * external. Plain ESM bundles cannot load there.
  *
  * Externals are exactly the loader-table entries this bundle requires by
- * value: the platform modules (react, cordis, ui-slots, schema-form) and the
- * documented runtime store exemption (createSnapshotStore lives in
- * dsh-client-runtime pending its rehoming). cordis-fabric/client is NOT a
- * table entry — the cordis-fabric row is disabled (the library package has
- * no host plugin form), so its browser factory never registers and a
- * synchronous require would miss the table. The browser half mounts its own
- * FabricService copy instead (the bridge is a globalThis singleton), so the
- * trio's client source is inlined via alias. Everything else is inlined;
+ * value: the platform modules (react, cordis, ui-slots) and the documented
+ * runtime store exemption (createSnapshotStore lives in dsh-client-runtime
+ * pending its rehoming). Schema-form helpers are pure build-time code and are
+ * inlined because current DSH profiles no longer expose a schema-form module
+ * row. cordis-fabric/client is NOT a table entry — the cordis-fabric row is
+ * disabled (the library package has no host plugin form), so its browser
+ * factory never registers and a synchronous require would miss the table.
+ * The browser half mounts its own FabricService copy instead (the bridge is a
+ * globalThis singleton), so the trio's client source is inlined via alias. Everything else is inlined;
  * type-only imports never reach the bundle.
  */
 export const CLIENT_EXTERNALS = [
@@ -27,7 +28,6 @@ export const CLIENT_EXTERNALS = [
   'react/jsx-runtime',
   '@deepseek-ai/cordis',
   '@deepseek-ai/dsh-client-ui-slots',
-  '@deepseek-ai/dsh-client-schema-form',
   '@deepseek-ai/dsh-client-runtime/client',
 ]
 
