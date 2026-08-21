@@ -119,14 +119,16 @@ describe('ui-settings-plugins apply', () => {
     expect(inject).toEqual(['slots', 'locale', 'connection', 'remote'])
   })
 
-  it('installs the nav-scroll styles directly (the Fabric rewrite cannot match the ModuleLoader bundle)', async () => {
+  it('installs fiber-owned nav-scroll styles when the browser rewrite is unavailable', async () => {
     const b = await bench()
     declare(b.slots)
-    // Node suites have no document; spy that apply reaches the direct
-    // install (the document guard makes it a no-op off the browser).
     const spy = vi.spyOn(navScroll, 'installNavScrollStyles')
-    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    const fiber = b.ctx.plugin({ inject: [...inject], apply })
+    await fiber.await()
     expect(spy).toHaveBeenCalled()
+    expect(document.querySelectorAll(`style[data-fabric="${navScroll.NAV_SCROLL_PATCH}"]`)).toHaveLength(1)
+    await fiber.dispose()
+    expect(document.querySelectorAll(`style[data-fabric="${navScroll.NAV_SCROLL_PATCH}"]`)).toHaveLength(0)
     spy.mockRestore()
   })
 
@@ -170,8 +172,8 @@ describe('ui-settings-plugins apply', () => {
     expect(before.settingsMutate).toHaveBeenCalledWith(settingsPayload, signal)
     const { update: crawlerUpdate, remove: crawlerRemove } =
       before.crawler as unknown as { update: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> }
-    expect(crawlerUpdate).toHaveBeenCalledWith(compositionPayload.id, compositionPayload.ops)
-    expect(crawlerRemove).toHaveBeenCalledWith(removePayload.id)
+    expect(crawlerUpdate).toHaveBeenCalledWith(compositionPayload.id, compositionPayload.ops, signal)
+    expect(crawlerRemove).toHaveBeenCalledWith(removePayload.id, signal)
 
     const after = await bench({ compositionDescribe })
     const fiber = after.ctx.plugin({ inject: [...inject], apply })

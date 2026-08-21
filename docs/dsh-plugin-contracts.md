@@ -18,9 +18,9 @@ Required Cordis services belong in `inject`. Optional services are read through 
 
 This bundle is a dual-face package: the host crawler half lives at `src/index.ts` (Loader metadata, service provide, and browser bundle serving), `src/routes.ts` (the crawler's own webserver composition route), `src/nav-scroll.ts` (the browser bundle rewrite contract), and `src/invariant.ts`; the browser client half lives under `src/client/`. For a larger plugin, keep those responsibilities focused and group cohesive behavior under capability-named directories such as `src/<feature>/`. Add `src/services/` only when the package owns actual Cordis services.
 
-The baseline test boundary separates host tests (`tests/host/`) from client tests (`tests/client/`): the crawler's real-loader and unit suites live under `tests/host/` with their child-process fixture under `tests/host/fixtures/`, and the browser store/section suites under `tests/client/`. Add feature-specific `tests/<feature>.spec.ts` files for focused behavior and stable visible-output fixtures under `tests/snapshots/`. Keep snapshot inventory and refresh rules explicit.
+The baseline test boundary separates host tests (`tests/host/`) from client tests (`tests/client/`): loader composition and unit suites live under `tests/host/`, browser store/section/wire suites under `tests/client/`, and reusable closure-bundle seeds under `tests/client-bundles/` with the module-table harness in `tests/module-loader.ts`. Add focused specs beside the behavior they cover.
 
-`patches/` is an optional project-root directory for two kinds of corrections: exact-version pnpm dependency patches (declared in `pnpm-workspace.yaml`) and DSH host patches (self-contained diffs against a pinned host snapshot, applied with `git apply`, never part of the published package). This bundle ships with zero out-of-package host changes (see `README.md`), so `patches/` holds only its README until a real patch exists. `scripts/extract-patch.mjs` regenerates a host patch and `scripts/patch.sh` applies it; both read `patches/host-patch.config.json` (schema in `patches/README.md`).
+The repository has no out-of-package host patch directory; `cordis.patch.yml` is the only profile-layer change and the published package contains no source patches.
 
 ## Lifecycle ownership
 
@@ -40,17 +40,20 @@ The minimum package evidence includes a real Loader export-shape test, schema/de
 
 ## Build and distribution
 
-The development build is:
+The development verification is:
 
 ```sh
 pnpm run typecheck
 pnpm test
 pnpm run build
+pnpm pack --dry-run --json
 ```
+
+The package build stages browser declarations under `lib/.client-dts`, promotes only `client.d.ts` and its map with `scripts/assemble-client-dts.mjs`, then emits the closure-factory runtime and validates it with `scripts/verify-client-bundle.mjs`. A declaration build must never write a plain ESM artifact to the published `lib/client.js` path.
 
 The release build produces a ready-made artifact with the same commands and
 `pnpm pack --dry-run --json`; it emits declarations and runtime JavaScript using
-only this repository's installed dependencies. The release package declares Fabric as a required host peer, not a runtime or bundled dependency, so it never carries a second Fabric copy. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies` for local installation and verification. The consuming profile must install `@oh-my-dsh/cordis-fabric-pack` separately; the package's workspace setting is not transferred to the profile's pnpm configuration. Profile/plugin installation consumes the packed artifact and does not run an install-time `prepare` hook. Inspect the final file list and restore a development build
+only this repository's installed dependencies. The release package declares Stent as a required host peer, not a runtime or bundled dependency, so it never carries a second Stent copy. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies` for local installation and verification. The consuming profile must install `@oh-my-dsh/stent-pack` separately; the package's workspace setting is not transferred to the profile's pnpm configuration. Profile/plugin installation consumes the packed artifact and does not run an install-time `prepare` hook. Inspect the final file list and restore a development build
 afterward when the pack lifecycle cleans or replaces generated files.
 
 A package is ready for Git or npm only when every manifest-declared runtime and type entry exists after the relevant consumer lifecycle. Publishing, pushing, tagging, and registry operations remain separately authorized actions.

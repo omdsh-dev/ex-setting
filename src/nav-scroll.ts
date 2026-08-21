@@ -3,33 +3,32 @@
  *
  * The settings navigation is a flex column owned by ui-settings-general;
  * with the crawler's long automatic catalog it must scroll instead of
- * overflowing the dialog. The host half rewrites the ui-settings-general
- * client bundle at request time (serveBrowserTransform) so the SettingsRoot
- * component publishes this patch id; the browser half registers a `before`
- * handler that injects the scroll styles into the document. The styles match
- * the dialog's navigation semantically, so no hashed CSS module class name
- * leaks across packages.
+ * overflowing the dialog. The host half serves the ui-settings-general client
+ * bundle through the optional browser transform and keeps the target descriptor
+ * here; the browser half installs the same semantic scroll styles directly as
+ * a fallback that does not depend on transformed code. No hashed CSS module
+ * class name leaks across packages.
  * @module @deepseek-ai/dsh-ex-setting/nav-scroll
  */
 
-/** Patch id shared with the browser half's handler registration. */
-export const NAV_SCROLL_PATCH = 'web-config-crawler/nav-scroll'
+import {
+  NAV_SCROLL_FILE,
+  NAV_SCROLL_FUNCTION,
+  NAV_SCROLL_MODULE,
+  NAV_SCROLL_PATCH,
+} from './nav-scroll-contract.ts'
 
-/** The transformed bundle: ui-settings-general's browser artifact. */
-export const NAV_SCROLL_MODULE = '@deepseek-ai/dsh-client-ui-settings-general'
-
-/** The bundle file the transform rewrites (the client-modules artifact path). */
-export const NAV_SCROLL_FILE = 'lib/client.js'
-
-/** The component the transform targets: the settings dialog root. */
-export const NAV_SCROLL_FUNCTION = 'SettingsRoot'
-
-/** Exact route that outranks the module host's `/plugins` prefix. */
-export const NAV_SCROLL_ROUTE = `/plugins/${NAV_SCROLL_MODULE}/client.js`
+export {
+  NAV_SCROLL_FILE,
+  NAV_SCROLL_FUNCTION,
+  NAV_SCROLL_MODULE,
+  NAV_SCROLL_PATCH,
+  NAV_SCROLL_ROUTE,
+} from './nav-scroll-contract.ts'
 
 /**
- * The static patch descriptor the host serves the transformed bundle with.
- * The handler is bound by the browser half under the same id.
+ * The static patch descriptor the host uses for the optional bundle transform;
+ * the browser half installs the corresponding semantic styles directly.
  */
 export const navScrollPatch = {
   id: NAV_SCROLL_PATCH,

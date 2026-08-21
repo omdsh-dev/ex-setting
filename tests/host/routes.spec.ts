@@ -150,6 +150,21 @@ describe('registerCompositionRoute', () => {
     expect(malformed.status).toBe(400)
     expect((JSON.parse(malformed.body) as { code: string }).code).toBe('composition-rejected')
 
+    const invalidOp = fakeRes()
+    server.captured!.route.handler(
+      fakeReq('POST', JSON.stringify({ op: 'update', id: 'session', ops: [{ op: 'set', path: [1] }] })),
+      invalidOp,
+    )
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(invalidOp.status).toBe(400)
+    expect((JSON.parse(invalidOp.body) as { message: string }).message).toMatch(/path must be an array of strings/)
+
+    const oversized = fakeRes()
+    server.captured!.route.handler(fakeReq('POST', 'x'.repeat(64 * 1024 + 1)), oversized)
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(oversized.status).toBe(400)
+    expect((JSON.parse(oversized.body) as { message: string }).message).toMatch(/body too large/)
+
     const refused = fakeRes()
     server.captured!.route.handler(
       fakeReq('POST', JSON.stringify({ op: 'update', id: 'ghost', ops: [] })),

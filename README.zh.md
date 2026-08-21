@@ -9,21 +9,25 @@
 ```text
 package.json              # host/client 包以及 dsh.bundle/dsh.client 清单
 cordis.patch.yml          # 挂载 crawler 的 profile 层
-src/index.ts              # host crawler 插件(服务提供 + Fabric handler 绑定)
+src/index.ts              # host crawler 插件(服务提供 + 浏览器 bundle serving)
 src/routes.ts             # crawler 自有的 webserver composition 路由
-src/nav-scroll.ts         # 浏览器 bundle 重写契约(serveBrowserTransform)
+src/composition-contract.ts # host/client composition wire 类型
+src/composition-ops.ts     # host 侧路径编辑应用
+src/nav-scroll.ts         # 浏览器 bundle 重写描述
+src/nav-scroll-contract.ts # host/client 共用的重写标识
 src/invariant.ts          # crawler invariant companion
 src/client/               # 浏览器设置页(store、section、crawler wire)
 lib/                      # 生成的 host/client 产物
 docs/                     # host 和 client 协议详细说明
-tests/host/               # crawler、route、invariant、loader 与 Fabric composition 测试
-tests/client/             # browser store 和 section 测试
-patches/                  # host patch 契约(为空:包外零改动)
-scripts/                  # verify:self-contained、host patch 提取/应用
+tests/host/               # crawler、route、export、invariant 与 loader 测试
+tests/client/             # browser store、section 和 wire 测试
+tests/client-bundles/     # 可复用的 closure-bundle 测试种子
+tests/module-loader.ts    # module-table materialization harness
+scripts/                  # 声明组装与构建产物契约检查
 .agents/skills/           # dsh-plugin-* 贡献工作流
 ```
 
-两个 runtime face 共享一个 package identity，因此 release/profile 安装只有一个 root 产物。浏览器 face 通过 `@deepseek-ai/dsh-ex-setting/client` 导出，并由 package 的 `dsh.client` 清单选择。纯 schema-form 路径操作会被内联进浏览器 closure，不再要求 profile 提供独立的动态 `@deepseek-ai/dsh-client-schema-form` row，因此也兼容由 settings UI 自己提供 schema service 的 profile。
+两个 runtime face 共享一个 package identity，因此 release/profile 安装只有一个 root 产物。浏览器 face 通过 `@deepseek-ai/dsh-ex-setting/client` 导出，并由 package 的 `dsh.client` 清单选择。纯 schema-form 路径操作会被内联进浏览器 closure，不再要求 profile 提供独立的动态 `@deepseek-ai/dsh-client-schema-form` row，因此也兼容由 settings UI 自己提供 schema service 的 profile。声明构建写入 `lib/.client-dts` 并在打包前删除；浏览器实际只加载 `lib/client.js`。
 
 通过官方插件通道安装现成的 release 产物：
 
@@ -31,7 +35,7 @@ scripts/                  # verify:self-contained、host patch 提取/应用
 dsh plugin --profile web add https://github.com/omdsh-dev/ex-setting/releases/latest/download/pkg.tgz
 ```
 
-profile 必须已经提供 `@oh-my-dsh/cordis-fabric` 与 `@oh-my-dsh/cordis-fabric-api` 0.1.1 runtime pair。它们是本插件的必需 peer dependency，不是 `dependencies` 或 `bundledDependencies`，因此 ex-setting release tarball 不会携带第二份 Fabric。本仓库的 `pnpm-workspace.yaml` 已启用 `strictPeerDependencies`，本地安装和检查在任一 peer 缺失时会失败。请先在消费该插件的 profile 中安装 `@oh-my-dsh/cordis-fabric-pack`；包自身的 workspace 配置不会复制到该 profile 的 pnpm 配置中。profile 仍必须包含该 Fabric pack，因为它的 `fabric-dsh` launcher 负责安装 load-time hooks 和 bootstrap row。
+profile 必须已经提供 `@oh-my-dsh/stent` 与 `@oh-my-dsh/stent-api` 0.1.1 runtime pair。它们是本插件的必需 peer dependency，不是 `dependencies` 或 `bundledDependencies`，因此 ex-setting release tarball 不会携带第二份 Stent。本仓库的 `pnpm-workspace.yaml` 已启用 `strictPeerDependencies`，本地安装和检查在任一 peer 缺失时会失败。请先在消费该插件的 profile 中安装 `@oh-my-dsh/stent-pack`；包自身的 workspace 配置不会复制到该 profile 的 pnpm 配置中。profile 仍必须包含该 Stent pack，因为它的 `stent-dsh` launcher 负责安装 load-time hooks 和 bootstrap row。
 
 ## 组合行为
 
@@ -50,30 +54,29 @@ Crawler 会脱敏 secret，按路径应用并通过 schema resolve 编辑，持�
 
 - **宿主提供 settings namespace** — DSH gateway 会提供当前 composition 注册的所有 namespace。挂载本组合包只增加 crawler 和 composition editor，不会 transform 或替换 gateway 的暴露决策。
 - **crawler 自有的 composition 路由** — 浏览器侧通过 crawler 自己的 webserver 路由(`/dsh-config/crawler/composition`，`src/routes.ts`)读写 composition row，而不是 gateway RPC 域，因此写路径不向 `apiproxy` 或 `connection` 添加任何东西。
-- **served 浏览器重写** — crawler 通过 `serveBrowserTransform` 提供 `ui-settings-general` client bundle，把 `SettingsRoot` 重写为发布 `web-config-crawler/nav-scroll`；浏览器侧注册对应的 `before` handler 注入对话框导航滚动样式(见 `docs/ui-settings-plugins.md`)。
+- **served 浏览器重写** — 当可选的 Stent compatibility service 能匹配 `ui-settings-general` 产物时，crawler 会在 `/plugins/@deepseek-ai/dsh-client-ui-settings-general/client.js` 提供重写后的 bundle；浏览器侧同时以 fiber-owned fallback 直接安装相同的语义化导航样式。重写标识统一放在 `src/nav-scroll-contract.ts`。
 
 Settings/composition wire 协议、API proxy handler、slot host 和 browser shell 由 profile 使用的 DSH 版本提供。
 
 ## 开发
 
-宿主包(`@deepseek-ai/dsh-*`、`@deepseek-ai/cordis`)直接从 npm registry 安装:每个运行时 import 都以 `^0.1.0-rc.0` 系列声明 peer + dev 双依赖,开发解析全部来自本仓库自己的 `node_modules`——不再需要 sibling checkout。必需的 Fabric peer 也在 `devDependencies` 中以 npm semver 范围提供,用于本地类型检查和测试；它们不会进入 ex-setting release package。devDependencies 同时列全了测试专用宿主树的 peer 闭包(apiproxy 组合测试会 import 真实网关)。
+宿主包(`@deepseek-ai/dsh-*`、`@deepseek-ai/cordis`)直接从 npm registry 安装:每个运行时 import 都以 `^0.1.0-rc.0` 系列声明 peer + dev 双依赖,开发解析全部来自本仓库自己的 `node_modules`——不再需要 sibling checkout。必需的 Stent peer 也在 `devDependencies` 中以 npm semver 范围提供,用于本地类型检查和测试；它们不会进入 ex-setting release package。devDependencies 同时列全了测试专用宿主树的 peer 闭包(apiproxy 组合测试会 import 真实网关)。
 
 ```sh
 pnpm install
 pnpm run typecheck
 pnpm test
 pnpm run build
-pnpm run verify:self-contained
+pnpm pack --dry-run --json
 ```
 
-release 产物在打包前从 `src/` 构建，因此 profile 安装消费现成的 `lib/` 产物，不运行安装期 `prepare` hook。checkout 开发使用上面的命令，完成后再打包到插件通道。
+release 产物在打包前从 `src/` 构建。声明构建写入临时 ignored 目录，`scripts/assemble-client-dts.mjs` 只提升公开的 client 声明，最后的 runtime 构建独占写入 `lib/client.js`；`scripts/verify-client-bundle.mjs` 会拒绝 plain ESM、动态 import 和未允许的 module-table 请求。profile 安装消费现成的 `lib/` 产物，不运行安装期 `prepare` hook。
 
 ## CI
 
-仓库自带两个 GitHub Actions 工作流：
+仓库自带一个 GitHub Actions 工作流：
 
-- `.github/workflows/ci.yml` — 每次推送到 `main` 与每个 pull request：冻结 lockfile 安装、`verify:self-contained`、typecheck、测试与构建。
-- `.github/workflows/release.yml` — 每次推送到 `main`：执行验证、类型检查、测试、构建，打包现成 tarball(`pnpm pack`)，发布到以 `package.json` 版本号命名的 GitHub Release(`v<version>`)。提升 `version` 即发布新版本；同版本再次推送会刷新该 Release 的产物。
+- `.github/workflows/release.yml` — 每次推送到 `main`：使用冻结 lockfile 安装，运行类型检查、测试和构建（包括最终 client 产物 gate），打包现成 tarball 与 checksum；只有 `package.json` 发生变化时才创建 `v<version>` GitHub Release。非版本推送只做验证；已存在的 tag 会直接失败，不会覆盖。
 
 ## 模型体验
 

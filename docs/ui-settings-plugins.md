@@ -1,6 +1,6 @@
 # @deepseek-ai/dsh-ex-setting — ui-settings-plugins
 
-English | [中文](../README.zh.md)
+English | [中文](ui-settings-plugins.zh.md)
 
 The automatic Web configuration surface. Every settings namespace the host wire serves and every mounted plugin whose cordis.yml row carries a `Config` schema is projected into the Settings dialog's scrollable first-level navigation. Settings and composition sources retain source-prefixed identities because a namespace carries no owner metadata that proves composition-row ownership; label collisions fall back to the composition id or a `Config` suffix. Selecting a row opens only that source's editor in the detail column, with no aggregate Plugins page. With the [web-config-crawler](web-config-crawler.md) plugin mounted (the shipped web composition does), these rows are discovered automatically and need no per-plugin opt-in.
 

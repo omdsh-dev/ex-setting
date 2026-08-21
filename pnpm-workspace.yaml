@@ -4,17 +4,17 @@ packages:
 autoInstallPeers: false
 strictPeerDependencies: true
 
-# Fabric is a required peer on the host. Development uses npm semver ranges
-# in devDependencies; release builds never copy Fabric into this package.
+# Stent is a required peer on the host. Development uses npm semver ranges
+# in devDependencies; release builds never copy Stent into this package.
 allowBuilds:
   esbuild: true
 
-# Keep one top-level Cordis copy for the Fabric development packages, whose
+# Keep one top-level Cordis copy for the Stent development packages, whose
 # packages declare Cordis as a peer.
 public-hoist-pattern[]: '*cordis*'
 
 minimumReleaseAgeExclude:
-  # The current Fabric packages are consumed immediately after their bootstrap
-  # publication; future Fabric releases should add their exact versions here.
-  - '@oh-my-dsh/cordis-fabric-api@0.1.1'
-  - '@oh-my-dsh/cordis-fabric@0.1.1'
+  # The current Stent packages are consumed immediately after their bootstrap
+  # publication; future Stent releases should add their exact versions here.
+  - '@oh-my-dsh/stent-api@0.1.1'
+  - '@oh-my-dsh/stent@0.1.1'

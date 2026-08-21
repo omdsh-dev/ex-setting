@@ -124,9 +124,9 @@ export async function apply(ctx: ClientContext): Promise<void> {
   const mutateSettings: PluginSettingsSectionInjected['mutateSettings'] =
     (request, signal) => connection.api.settings.mutate(request, signal)
   const updateComposition: PluginSettingsSectionInjected['updateComposition'] =
-    (request, _signal) => crawler.update(request.id, request.ops)
+    (request, signal) => crawler.update(request.id, request.ops, signal)
   const removeComposition: PluginSettingsSectionInjected['removeComposition'] =
-    (request, _signal) => crawler.remove(request.id)
+    (request, signal) => crawler.remove(request.id, signal)
   const injected = (): PluginSettingsSectionInjected => ({
     hooks: { pluginSettings: controller.store },
     reload,
@@ -136,13 +136,12 @@ export async function apply(ctx: ClientContext): Promise<void> {
   })
   const t = ctx.locale.bind(NS)
 
-  // The crawler host serves the ui-settings-general bundle through a Fabric
-  // rewrite on SettingsRoot, but the browser-transform cannot match inside
-  // the ModuleLoader closure artifact (serveBundle degrades to 'raw'), so
-  // the nav-scroll styles are installed directly: they are static CSS that
-  // applies whenever the settings dialog renders. A composition that later
-  // binds the publish handler keeps this idempotent install harmless.
-  installNavScrollStyles()
+  // Install the fallback styles as a fiber-owned effect so HMR and plugin
+  // disposal cannot leave a stale document rule behind.
+  ctx.effect(
+    () => installNavScrollStyles(),
+    'ui-settings-plugins: nav scroll styles',
+  )
 
   ctx.effect(() => {
     const live = new Map<string, LiveSection>()

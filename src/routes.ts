@@ -18,7 +18,10 @@
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
-import type { CompositionConfigView, CompositionPathOp, WebConfigCrawler } from './index.ts'
+import type {
+  CompositionConfigView, CompositionPathOp, CompositionRequest,
+} from './composition-contract.ts'
+import type { WebConfigCrawler } from './index.ts'
 
 /** Exact route path the browser half fetches (same-origin). */
 export const COMPOSITION_ROUTE = '/dsh-config/crawler/composition'
@@ -32,11 +35,6 @@ interface WebServerLike {
   }): () => void
 }
 
-/** One POST body: the operation selectable by its discriminant. */
-type CompositionRequest =
-  | { op: 'update'; id: string; ops: CompositionPathOp[] }
-  | { op: 'remove'; id: string }
-
 /** Maximum accepted request body: composition edits are tiny (64 KiB). */
 const MAX_BODY_BYTES = 64 * 1024
 
@@ -46,43 +44,90 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body))
 }
 
-/** Collect the request body with a size cap; oversized bodies reject. */
+/** Collect the request body with a size cap; oversized bodies reject once. */
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let size = 0
+    let settled = false
     const chunks: Buffer[] = []
+    const fail = (error: Error): void => {
+      if (settled) return
+      settled = true
+      reject(error)
+    }
     req.on('data', (chunk: Buffer) => {
+      if (settled) return
       size += chunk.length
       if (size > MAX_BODY_BYTES) {
-        reject(new Error('web-config-crawler: composition request body too large'))
-        req.destroy()
+        fail(new Error('web-config-crawler: composition request body too large'))
+        req.destroy?.()
         return
       }
       chunks.push(chunk)
     })
-    req.on('error', (error: Error) => { reject(error) })
-    req.on('end', () => { resolve(Buffer.concat(chunks).toString('utf8')) })
+    req.on('error', (error: Error) => { fail(error) })
+    req.on('end', () => {
+      if (settled) return
+      settled = true
+      resolve(Buffer.concat(chunks).toString('utf8'))
+    })
+  })
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** Narrow one wire path to the string segments consumed by the host editor. */
+function parsePath(value: unknown): string[] {
+  if (!Array.isArray(value) || value.some(segment => typeof segment !== 'string')) {
+    throw new Error('web-config-crawler: composition op.path must be an array of strings')
+  }
+  return [...value]
+}
+
+/** Narrow the path operations accepted by the composition route. */
+function parseOps(value: unknown): CompositionPathOp[] {
+  if (!Array.isArray(value)) {
+    throw new Error('web-config-crawler: body.ops must be an array of path ops')
+  }
+  return value.map((candidate) => {
+    if (!isRecord(candidate) || (candidate.op !== 'set' && candidate.op !== 'unset')) {
+      throw new Error('web-config-crawler: each composition op must use "set" or "unset"')
+    }
+    const path = parsePath(candidate.path)
+    if (candidate.op === 'set') {
+      if (!Object.prototype.hasOwnProperty.call(candidate, 'value')) {
+        throw new Error('web-config-crawler: set operations must include value')
+      }
+      return { op: 'set', path, value: candidate.value }
+    }
+    return { op: 'unset', path }
   })
 }
 
 /** Narrow an unknown parsed JSON value to a composition request. */
 function parseRequest(value: unknown): CompositionRequest {
-  if (typeof value !== 'object' || value === null) {
+  if (!isRecord(value)) {
     throw new Error('web-config-crawler: expected a JSON object body')
   }
-  const record = value as Record<string, unknown>
-  const op = record.op
+  const op = value.op
   if (op !== 'update' && op !== 'remove') {
     throw new Error('web-config-crawler: body.op must be "update" or "remove"')
   }
-  if (typeof record.id !== 'string' || record.id.length === 0) {
+  if (typeof value.id !== 'string' || value.id.length === 0) {
     throw new Error('web-config-crawler: body.id must be a non-empty string')
   }
-  if (op === 'remove') return { op, id: record.id }
-  if (!Array.isArray(record.ops)) {
-    throw new Error('web-config-crawler: body.ops must be an array of path ops')
-  }
-  return { op, id: record.id, ops: record.ops as CompositionPathOp[] }
+  if (op === 'remove') return { op, id: value.id }
+  return { op, id: value.id, ops: parseOps(value.ops) }
+}
+
+/** Respond with the route's stable rejection envelope. */
+function compositionError(res: ServerResponse, error: unknown): void {
+  json(res, 400, {
+    code: 'composition-rejected',
+    message: error instanceof Error ? error.message : String(error),
+  })
 }
 
 /**
@@ -119,16 +164,10 @@ export function registerCompositionRoute(ctx: Context, crawler: WebConfigCrawler
           respond(200, {})
         }
       } catch (error) {
-        respond(400, {
-          code: 'composition-rejected',
-          message: error instanceof Error ? error.message : String(error),
-        })
+        compositionError(res, error)
       }
     }).catch((error: unknown) => {
-      respond(400, {
-        code: 'composition-rejected',
-        message: error instanceof Error ? error.message : String(error),
-      })
+      compositionError(res, error)
     })
   }
   const route = { kind: 'exact' as const, path: COMPOSITION_ROUTE, handler }

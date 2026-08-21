@@ -1,12 +1,16 @@
 # @deepseek-ai/dsh-ex-setting — web-config-crawler
 
-[English](../README.md) | 中文
+[English](web-config-crawler.md) | 中文
 
-部署层的显式选择：挂载本插件后，宿主 API 网关向 Web 客户端提供**全部**已注册 settings namespace——插件无需任何接入动作——并通过 `composition.*` RPC 领域暴露每个挂载插件的组合 `Config`（cordis.yml 行配置）。不挂载的组合保持网关默认立场：只提供可配置模型提供方 namespace 与显式 `permission`/`ui-onboarding` allowlist，其余 namespace 一律回答 `settings-not-exposed`。
+部署层的显式选择：挂载本插件后，宿主 API 网关向 Web 客户端提供**全部**已注册 settings namespace——插件无需任何接入动作——并通过 crawler 自有的 webserver 路由暴露每个挂载插件的组合 `Config`（cordis.yml 行配置）。不挂载本插件时，网关仍可提供已注册 settings namespace，但 crawler 和 composition editor 不会挂载。
+
+## 外部零改动设计
+
+Crawler 不修改包外宿主代码：settings namespace 仍由 gateway 提供，composition 读写使用 `/dsh-config/crawler/composition`，路由只在 webserver 可用时注册。若 bundle rewrite 能匹配 `ui-settings-general` 产物，host 会提供重写后的 bundle；browser 同时安装 fiber-owned 的语义化导航样式作为 fallback。
 
 ## 服务 API
 
-- 提供 `ctx.webConfigCrawler`（`namespaces(): SettingsNamespace[]`）——活的 settings 注册表，按注册顺序，调用时实时解析，请求之间新挂载或卸载的 namespace 立即反映。网关在计算可服务集合时咨询此服务。
+- 提供 `ctx.webConfigCrawler`（`namespaces(): SettingsNamespace[]`）——活的 settings 注册表，按注册顺序，调用时实时解析，请求之间新挂载或卸载的 namespace 立即反映。Crawler 自己的 composition 路由和 invariant 使用这个接口。
 - `compositionConfigs()`——每个组合行携带 `Config` schema 的挂载插件，脱敏后（与 settings seam 相同的结构化遍历）按注册顺序返回。
 - `updateComposition(id, ops)`——对插件**当前**解析配置施加路径 op（wire 从未回传的 secret 得以保留），按 `Config` schema 校验，并把完整行写入个人 overlay。
 - `removeComposition(id)`——从个人 overlay 移除该行，下次启动回退到更低组合层。

@@ -1,6 +1,6 @@
 /**
  * Local test doubles mirroring the two faces the client specs use from the
- * registry test-support package. The fabric pattern keeps node-side specs
+ * registry test-support package. The Stent pattern keeps node-side specs
  * free of packages whose root modules re-export closure-factory /client
  * bundles (which carry no ESM exports), so the tiny contract surfaces the
  * specs actually exercise live here instead.

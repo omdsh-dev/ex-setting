@@ -11,7 +11,7 @@ afterEach(() => {
 })
 
 describe('installNavScrollStyles', () => {
-  it('injects the dialog navigation scroll rules once and idempotently', () => {
+  it('injects the dialog navigation scroll rules once and keeps them until all owners dispose', () => {
     const first = installNavScrollStyles()
     const second = installNavScrollStyles()
     const elements = document.querySelectorAll(`style[data-fabric="${NAV_SCROLL_PATCH}"]`)
@@ -19,7 +19,9 @@ describe('installNavScrollStyles', () => {
     expect(elements[0]?.textContent).toContain('[role="dialog"] nav')
     expect(elements[0]?.textContent).toContain('overflow-y: auto')
     first()
+    expect(document.querySelectorAll(`style[data-fabric="${NAV_SCROLL_PATCH}"]`)).toHaveLength(1)
     second()
+    expect(document.querySelectorAll(`style[data-fabric="${NAV_SCROLL_PATCH}"]`)).toHaveLength(0)
   })
 
   it('removes the styles with the disposer and re-installs on the next call', () => {

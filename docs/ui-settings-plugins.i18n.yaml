@@ -1,6 +1,7 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# Bilingual-pair consistency record for the settings UI documents: the git blob hash of each
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write packages/client/ui-settings-plugins/README.md
-README.md: 7158fadd606c032c0fca9ac3f056b591fbbb07ab
-README.zh.md: 2467d4cf882a3b2d1069883c98db7ece2ddc00ad
+#   Edit both `docs/ui-settings-plugins.md` and `docs/ui-settings-plugins.zh.md`, then
+#   refresh the two hashes below with `git hash-object`.
+ui-settings-plugins.md: edd023958cbbcfa723013f0acd81ec1746a8c563
+ui-settings-plugins.zh.md: 5b9ee3fbe8ca19ce26de592df2a899ded315bbc1

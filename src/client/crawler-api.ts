@@ -10,33 +10,25 @@
  * `update` / `remove` fail loud with the host's rejection message.
  */
 
+import type {
+  CompositionConfigView,
+  CompositionPathOp,
+} from '../composition-contract.ts'
+
 /** One mounted plugin's composition configuration, redacted for the wire. */
-export interface CompositionNamespaceView {
-  /** The composition row id this config belongs to. */
-  id: string
-  /** Optional display name from the plugin shape. */
-  name?: string
-  /** Serialized schemastery schema envelope (`Config.toJSON()`). */
-  schema: unknown
-  /** Redacted resolved configuration (row config after defaulting). */
-  value: unknown
-  /** Redacted secret positions inside the resolved value. */
-  secrets: Array<{ path: string[]; set: boolean }>
-}
+export type CompositionNamespaceView = CompositionConfigView
 
 /** One path-addressed composition edit, mirroring the settings wire ops. */
-export type CompositionPathOpView =
-  | { op: 'set'; path: string[]; value: unknown }
-  | { op: 'unset'; path: string[] }
+export type CompositionPathOpView = CompositionPathOp
 
 /** The crawler composition face the settings dialog consumes. */
 export interface CrawlerCompositionApi {
   /** Redacted composition rows in row order; an unreachable route yields []. */
   describe(): Promise<CompositionNamespaceView[]>
   /** Apply path edits and persist the row into the personal overlay. */
-  update(id: string, ops: CompositionPathOpView[]): Promise<CompositionNamespaceView>
+  update(id: string, ops: CompositionPathOpView[], signal?: AbortSignal): Promise<CompositionNamespaceView>
   /** Remove the row from the personal overlay, reverting to lower layers. */
-  remove(id: string): Promise<void>
+  remove(id: string, signal?: AbortSignal): Promise<void>
 }
 
 /** Exact route path the crawler host registers (see its routes module). */
@@ -64,10 +56,11 @@ export function crawlerCompositionApi(
   route: string = CRAWLER_COMPOSITION_ROUTE,
   fetchImpl: typeof fetch = fetch,
 ): CrawlerCompositionApi {
-  const send = (body: unknown): Promise<Response> => fetchImpl(route, {
+  const send = (body: unknown, signal?: AbortSignal): Promise<Response> => fetchImpl(route, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
+    ...(signal === undefined ? {} : { signal }),
   })
 
   return {
@@ -84,14 +77,14 @@ export function crawlerCompositionApi(
       }
     },
 
-    async update(id, ops) {
-      const response = await send({ op: 'update', id, ops })
+    async update(id, ops, signal) {
+      const response = await send({ op: 'update', id, ops }, signal)
       if (!response.ok) throw await responseError(response)
       return await response.json() as CompositionNamespaceView
     },
 
-    async remove(id) {
-      const response = await send({ op: 'remove', id })
+    async remove(id, signal) {
+      const response = await send({ op: 'remove', id }, signal)
       if (!response.ok) throw await responseError(response)
     },
   }

@@ -1,6 +1,6 @@
 # @deepseek-ai/dsh-ex-setting — ui-settings-plugins
 
-[English](../README.md) | 中文
+[English](ui-settings-plugins.md) | 中文
 
 全自动 Web 配置界面：宿主 wire 服务的每个 settings namespace，以及每个组合行携带 `Config` schema 的挂载插件，都会投影到设置对话框左侧可滚动的一级导航中。Settings 与 composition 来源保留带来源前缀的身份，因为 namespace 不携带足以证明组合行归属的 owner 元数据；label 冲突时回退到组合 id 或 `Config` 后缀。选中后，右侧只打开该来源的编辑器，不保留「插件设置」集合页。挂载 [web-config-crawler](web-config-crawler.md) 插件时（随附的 Web 组合默认挂载），这些导航项完全自动发现，插件无需任何接入动作。
 

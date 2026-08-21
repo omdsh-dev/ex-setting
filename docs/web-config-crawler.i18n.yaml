@@ -1,6 +1,7 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# Bilingual-pair consistency record for the crawler protocol documents: the git blob hash of each
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write packages/host/web-config-crawler/README.md
-README.md: 6ba083ba166ee070a16c1a62abebe37450aed493
-README.zh.md: e2914498f51e1bcd2d2f5a56554a7df39ebd90e3
+#   Edit both `docs/web-config-crawler.md` and `docs/web-config-crawler.zh.md`, then
+#   refresh the two hashes below with `git hash-object`.
+web-config-crawler.md: 3407aa71235a40045dcfcb6e82cce1dd080ad6ec
+web-config-crawler.zh.md: 802c6133ec7f8d3026498067bfbd726b76c3e410

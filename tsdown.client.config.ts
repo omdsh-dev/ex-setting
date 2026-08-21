@@ -12,24 +12,20 @@ import { transform } from 'lightningcss'
  * external. Plain ESM bundles cannot load there.
  *
  * Externals are exactly the loader-table entries this bundle requires by
- * value: the platform modules (react, cordis, ui-slots) and the documented
- * runtime store exemption (createSnapshotStore lives in dsh-client-runtime
- * pending its rehoming). Schema-form helpers are pure build-time code and are
- * inlined because current DSH profiles no longer expose a schema-form module
- * row. cordis-fabric/client is NOT a table entry — the cordis-fabric row is
- * disabled (the library package has no host plugin form), so its browser
- * factory never registers and a synchronous require would miss the table.
- * The browser half mounts its own FabricService copy instead (the bridge is a
- * globalThis singleton), so the trio's client source is inlined via alias. Everything else is inlined;
+ * value. React and its JSX runtime are shell-provided platform seeds; all
+ * other browser values are private to this closure. Type-only imports from
+ * Cordis and DSH packages do not create module-table requests. Schema-form
+ * helpers are pure build-time code and are inlined because current DSH
+ * profiles no longer expose a schema-form module row. The browser half mounts
+ * its own StentService copy instead of bundling a second Stent runtime;
  * type-only imports never reach the bundle.
  */
 export const CLIENT_EXTERNALS = [
   'react',
   'react/jsx-runtime',
-  '@deepseek-ai/cordis',
-  '@deepseek-ai/dsh-client-ui-slots',
-  '@deepseek-ai/dsh-client-runtime/client',
 ]
+
+const CLIENT_DTS_OUT_DIR = 'lib/.client-dts'
 
 /** Package id the client bundle registers under (the module-table key). */
 export const CLIENT_ID = '@deepseek-ai/dsh-ex-setting'
@@ -44,13 +40,13 @@ const CSS_VIRTUAL_SUFFIX = '.mjs'
  * @param entry - the client entry.
  * @param tsconfig - TypeScript config used for the client source.
  * @param declarations - emit a temporary ESM runtime plus bundled declarations;
- * the package build's second sequential runtime pass overwrites only the
- * runtime file.
+ * the package build promotes only `client.d.ts`/its map from the temporary
+ * directory before the closure runtime pass overwrites `lib/client.js`.
  */
 export function clientBundle(entry: string, tsconfig?: string, declarations = false): UserConfig {
   return {
     entry: { client: entry },
-    outDir: 'lib',
+    outDir: declarations ? CLIENT_DTS_OUT_DIR : 'lib',
     format: declarations ? 'esm' : 'cjs',
     platform: 'browser',
     target: 'es2022',
@@ -60,7 +56,7 @@ export function clientBundle(entry: string, tsconfig?: string, declarations = fa
     // Plugin code is fetched outside Vite's module graph, so its own bundle
     // must carry the TS/TSX mapping consumed by browser profiling tools.
     sourcemap: true,
-    clean: false,
+    clean: declarations,
     // tsdown auto-externalizes package dependencies; the loader table is the
     // only external source, everything else must inline.
     deps: {

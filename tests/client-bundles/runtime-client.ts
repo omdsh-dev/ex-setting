@@ -8,7 +8,6 @@
  */
 import { materialize, prepareClientBundles } from '../module-loader.ts'
 
-
 await prepareClientBundles(
   ['@deepseek-ai/cordis', 'react', 'react/jsx-runtime', '@deepseek-ai/dsh-client-ui-slots', '@deepseek-ai/dsh-client-ui-primitives'],
   ['../../node_modules/@deepseek-ai/dsh-client-runtime/lib/client.js'],

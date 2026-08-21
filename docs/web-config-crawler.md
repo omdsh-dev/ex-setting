@@ -1,6 +1,6 @@
 # @deepseek-ai/dsh-ex-setting — web-config-crawler
 
-English | [中文](../README.zh.md)
+English | [中文](web-config-crawler.zh.md)
 
 The deployment-level opt-in that mounts the Web configuration crawler and composition editor. The host API gateway serves every registered settings namespace to the Web client — no per-plugin opt-in required — while this plugin exposes every mounted plugin's composition `Config` (the cordis.yml row configuration) through its own webserver route. Without this plugin, the gateway still serves registered settings namespaces, but the crawler and composition editor are not mounted.
 
@@ -10,10 +10,10 @@ The crawler adds its behavior with **zero out-of-package host changes**:
 
 - **Host-served settings namespaces.** The DSH gateway owns the exposure decision and serves every namespace registered by the active composition. The crawler's `namespaces()` face is used by its own routes and invariant, not as a gateway patch.
 - **Composition writes own a webserver route.** The browser half reads and edits composition rows through the crawler's exact route `GET/POST /dsh-config/crawler/composition` (`src/routes.ts`) instead of a gateway RPC domain, so `apiproxy` and `connection` stay untouched. The route mounts only when the webserver capability is present; non-web compositions skip it.
+- **Served browser rewrite.** When the optional Stent compatibility service matches the `ui-settings-general` artifact, the host serves the transformed bundle through the exact `/plugins/@deepseek-ai/dsh-client-ui-settings-general/client.js` route. The browser half independently installs the same semantic navigation rules as a fiber-owned fallback.
 
 ## Service API
-
-- Provides `ctx.webConfigCrawler` (`namespaces(): SettingsNamespace[]`) — the live settings registry, in registration order, resolved at call time so namespaces that mount or dispose between requests are reflected immediately. The crawler uses this face for its own composition route and invariant.
+- `ctx.webConfigCrawler` (`namespaces(): SettingsNamespace[]`) — the live settings registry, in registration order, resolved at call time so namespaces that mount or dispose between requests are reflected immediately. The crawler uses this face for its own composition route and invariant.
 - `compositionConfigs()` — every mounted plugin whose composition row carries a `Config` schema, redacted (the same structural walk the settings seam uses), in registry order.
 - `updateComposition(id, ops)` — applies path-addressed ops to the plugin's CURRENT resolved configuration (so a secret the wire never returned survives), validates against the `Config` schema, and persists the full row into the personal overlay.
 - `removeComposition(id)` — removes the row from the personal overlay so the next boot reverts to the lower composition layers.

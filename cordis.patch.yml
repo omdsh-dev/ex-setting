@@ -1,7 +1,7 @@
 # The bundle mounts the host crawler and its browser client half together.
 # The host gateway already serves every registered settings namespace; this
 # bundle owns the crawler and composition editor, so its row is enabled when
-# the package is installed. Fabric remains an optional runtime capability for
+# the package is installed. Stent remains an optional runtime capability for
 # the browser bundle rewrite handled by the host half.
 - insert:
     - id: web-config-crawler

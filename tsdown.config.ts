@@ -3,11 +3,12 @@ import { clientBundle } from './tsdown.client.config.ts'
 
 /**
  * Build the host and browser declaration faces directly from `src/`. The
- * closure-factory browser runtime is emitted by the second, sequential
- * `tsdown.client.runtime.config.ts` invocation in the package build script;
- * keeping it out of this config prevents the declaration build from racing
- * with and overwriting `lib/client.js`. TypeScript is used only for the
- * separate no-emit typecheck script.
+ * browser declaration pass writes into `lib/.client-dts`; the package build
+ * promotes only its declaration files before the sequential closure runtime
+ * pass writes `lib/client.js`. Keeping the runtime pass separate prevents a
+ * declaration build from ever leaving a plain ESM client artifact at the
+ * published path. TypeScript is used only for the separate no-emit typecheck
+ * script.
  */
 export default [
   defineConfig({

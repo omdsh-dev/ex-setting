@@ -2,7 +2,7 @@
  * Minimal writable snapshot store conforming to the registry runtime's
  * published `SnapshotStore` contract (type-only import — the runtime's
  * factory ships inside its closure-factory /client bundle, which source
- * modules cannot value-import; the fabric pattern keeps source imports
+ * modules cannot value-import; the Stent pattern keeps source imports
  * type-only and builds state through contracts).
  */
 

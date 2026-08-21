@@ -1,23 +1,20 @@
 /**
- * Browser-side nav-scroll handler for the settings dialog. The host rewrites
- * the ui-settings-general client bundle so SettingsRoot publishes
- * `web-config-crawler/nav-scroll`; this module registers the matching
- * `before` handler that injects the scroll styles for the dialog navigation
- * (semantic selectors — no hashed CSS module class crosses packages). The
- * styles are idempotent and removed with the registering fiber.
+ * Browser-side nav-scroll style installer for the settings dialog. The host
+ * keeps an optional bundle-rewrite descriptor, while this module installs the
+ * semantic rules directly so the UI remains usable when the transform cannot
+ * match a closure-factory artifact. Styles are idempotent and removed with the
+ * registering fiber.
  */
 
-/** Patch id shared with the crawler host's served bundle rewrite. */
-export const NAV_SCROLL_PATCH = 'web-config-crawler/nav-scroll'
+import { NAV_SCROLL_PATCH } from '../nav-scroll-contract.ts'
 
-/** The transformed bundle's owning package (mirrors the host descriptor). */
-export const NAV_SCROLL_MODULE = '@deepseek-ai/dsh-client-ui-settings-general'
-
-/** The bundle file the host rewrites (mirrors the host descriptor). */
-export const NAV_SCROLL_FILE = 'lib/client.js'
-
-/** The component the host transforms (mirrors the host descriptor). */
-export const NAV_SCROLL_FUNCTION = 'SettingsRoot'
+export {
+  NAV_SCROLL_FILE,
+  NAV_SCROLL_FUNCTION,
+  NAV_SCROLL_MODULE,
+  NAV_SCROLL_PATCH,
+  NAV_SCROLL_ROUTE,
+} from '../nav-scroll-contract.ts'
 
 /** The dialog navigation's semantic selector: ui-settings-general renders
  * a native <nav> inside the role=dialog panel (no role="navigation"). The
@@ -25,8 +22,9 @@ export const NAV_SCROLL_FUNCTION = 'SettingsRoot'
  * own scroll container once the crawled catalog outgrows the dialog. */
 const NAV_SELECTOR = '[role="dialog"] nav'
 
-/** One injected style element (a singleton per document). */
+/** One injected style element shared by all mounted plugin fibers. */
 let styleElement: HTMLStyleElement | undefined
+const styleOwners = new Set<symbol>()
 
 /** The scroll rules for the settings dialog navigation. */
 const NAV_SCROLL_CSS = `
@@ -38,9 +36,12 @@ ${NAV_SELECTOR} {
 }
 `
 
-/** Whether the styles are currently installed. */
+/** Whether the shared styles are installed in the current document. */
 function installed(): boolean {
-  return styleElement !== undefined && document.head.contains(styleElement)
+  if (styleElement !== undefined && document.head.contains(styleElement)) return true
+  styleElement = undefined
+  styleOwners.clear()
+  return false
 }
 
 /**
@@ -50,14 +51,24 @@ function installed(): boolean {
 export function installNavScrollStyles(): () => void {
   // Node-side suites (and any headless context) have no document; the styles
   // are a browser-only enhancement.
-  if (typeof document === 'undefined' || installed()) return () => {}
-  styleElement = document.createElement('style')
-  styleElement.setAttribute('data-fabric', NAV_SCROLL_PATCH)
-  styleElement.textContent = NAV_SCROLL_CSS
-  document.head.appendChild(styleElement)
+  if (typeof document === 'undefined') return () => {}
+  if (!installed()) {
+    styleElement = document.createElement('style')
+    styleElement.setAttribute('data-fabric', NAV_SCROLL_PATCH)
+    styleElement.textContent = NAV_SCROLL_CSS
+    document.head.appendChild(styleElement)
+  }
+  const owner = Symbol('nav-scroll-owner')
+  styleOwners.add(owner)
   const element = styleElement
+  let disposed = false
   return () => {
-    if (styleElement === element) styleElement = undefined
-    document.head.removeChild(element)
+    if (disposed) return
+    disposed = true
+    styleOwners.delete(owner)
+    if (styleOwners.size === 0 && styleElement === element && element !== undefined) {
+      element.remove()
+      styleElement = undefined
+    }
   }
 }
