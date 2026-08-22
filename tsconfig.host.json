@@ -6,7 +6,6 @@
   "include": [
     "src/index.ts",
     "src/invariant.ts",
-    "src/routes.ts",
-    "src/nav-scroll.ts"
+    "src/routes.ts"
   ]
 }

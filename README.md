@@ -9,14 +9,12 @@ The automatic DSH Web settings bundle. It combines the host-side configuration c
 ```text
 package.json              # host/client package and dsh.bundle/dsh.client manifests
 cordis.patch.yml          # profile layer that mounts the crawler
-src/index.ts              # host crawler plugin (service provide + browser bundle serving)
+src/index.ts              # host crawler plugin (service provide)
 src/routes.ts             # crawler-owned webserver composition route
 src/composition-contract.ts # host/client composition wire types
 src/composition-ops.ts     # host-side path edit application
-src/nav-scroll.ts         # browser bundle rewrite descriptor
-src/nav-scroll-contract.ts # shared rewrite identifiers
+src/client/               # browser settings page (store, section, crawler wire, nav scroll)
 src/invariant.ts          # crawler invariant companion
-src/client/               # browser settings page (store, section, crawler wire)
 lib/                      # generated host/client artifacts
 docs/                     # detailed host and client protocol references
 tests/host/               # crawler, route, export, invariant, and loader tests
@@ -29,7 +27,9 @@ scripts/                  # declaration assembly and built bundle contract check
 
 The two runtime faces share one package identity so the release/profile installation has one root artifact. The browser face is exported as `@deepseek-ai/dsh-ex-setting/client` and is selected by the package's `dsh.client` manifest. Its pure schema-form path helpers are inlined into the browser closure instead of requiring a separate dynamic `@deepseek-ai/dsh-client-schema-form` row, which keeps the release compatible with profiles whose settings UI owns the schema service. The package's own declaration pass writes to `lib/.client-dts` and removes it before packing; only `lib/client.js` is served to the browser.
 
-The profile must already provide the `@oh-my-dsh/stent` and `@oh-my-dsh/stent-api` 0.1.1 runtime pair. They are required peer dependencies of this plugin, not `dependencies` or `bundledDependencies`, so the ex-setting release tarball never carries a second Stent copy. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies`, so local installs and checks fail when either peer is unavailable. Install `@oh-my-dsh/stent-pack` in the consuming profile first; a package's workspace setting is not copied into that profile's pnpm configuration. The profile must still include that Stent pack because its `stent-dsh` launcher installs the load-time hooks and bootstrap row.
+The consuming profile supplies the DSH host peers; this bundle has no Stent runtime or host bundle-rewrite
+dependency. The browser client installs its navigation fallback directly, while `cordis.patch.yml`
+remains the DSH bundle layer that mounts the crawler row.
 
 ## Bundle behavior
 
@@ -48,13 +48,13 @@ This bundle ships with **zero out-of-package host changes**. Three mechanisms ma
 
 - **Host-served settings namespaces** — the DSH gateway serves every namespace registered by the active composition. Mounting this bundle adds the crawler and composition editor; it does not transform or replace the gateway's exposure decision.
 - **Crawler-owned composition route** — the browser half reads and edits composition rows through the crawler's own webserver route (`/dsh-config/crawler/composition`, `src/routes.ts`) instead of a gateway RPC domain, so the write path adds nothing to `apiproxy` or `connection`.
-- **Served browser rewrite** — when the optional Stent compatibility service can match the `ui-settings-general` artifact, the crawler serves its transformed bundle under `/plugins/@deepseek-ai/dsh-client-ui-settings-general/client.js`; the browser half independently installs the same semantic navigation rules as a fiber-owned fallback. The shared rewrite identifiers live in `src/nav-scroll-contract.ts`.
+- **Browser-owned navigation fallback** — the browser half installs the semantic scroll rules directly as a fiber-owned effect, so the settings dialog remains usable without a host bundle transform. The style is idempotent and removed on plugin disposal.
 
 The settings/composition wire protocol, API proxy handlers, slot host, and browser shell are supplied by the DSH version selected by the profile.
 
 ## Development
 
-The host packages (`@deepseek-ai/dsh-*`, `@deepseek-ai/cordis`) install from the npm registry: every runtime import declares them as peer + dev dependencies at the `^0.1.0-rc.0` series, and development imports resolve from this repository's own `node_modules` — no sibling checkout is required. The required Stent peers are also present as npm semver ranges in `devDependencies` for local typechecking and tests; they are not included in the ex-setting release package. The devDependencies also enumerate the peer closure of the test-only host tree (the apiproxy composition test imports the real gateway).
+The host packages (`@deepseek-ai/dsh-*`, `@deepseek-ai/cordis`) install from the npm registry: every runtime import declares them as peer + dev dependencies at the `^0.1.0-rc.0` series, and development imports resolve from this repository's own `node_modules` — no sibling checkout is required. The devDependencies also enumerate the peer closure of the test-only host tree (the apiproxy composition test imports the real gateway).
 
 ```sh
 pnpm install

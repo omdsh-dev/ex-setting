@@ -16,9 +16,9 @@ import { transform } from 'lightningcss'
  * other browser values are private to this closure. Type-only imports from
  * Cordis and DSH packages do not create module-table requests. Schema-form
  * helpers are pure build-time code and are inlined because current DSH
- * profiles no longer expose a schema-form module row. The browser half mounts
- * its own StentService copy instead of bundling a second Stent runtime;
- * type-only imports never reach the bundle.
+ * profiles no longer expose a schema-form module row. The browser half uses
+ * only the shell-provided runtime contracts; type-only imports never reach
+ * the bundle.
  */
 export const CLIENT_EXTERNALS = [
   'react',

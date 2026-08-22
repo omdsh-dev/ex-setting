@@ -4,17 +4,8 @@ packages:
 autoInstallPeers: false
 strictPeerDependencies: true
 
-# Stent is a required peer on the host. Development uses npm semver ranges
-# in devDependencies; release builds never copy Stent into this package.
 allowBuilds:
   esbuild: true
 
-# Keep one top-level Cordis copy for the Stent development packages, whose
-# packages declare Cordis as a peer.
+# Keep one top-level Cordis copy for host package peers.
 public-hoist-pattern[]: '*cordis*'
-
-minimumReleaseAgeExclude:
-  # The current Stent packages are consumed immediately after their bootstrap
-  # publication; future Stent releases should add their exact versions here.
-  - '@oh-my-dsh/stent-api@0.1.1'
-  - '@oh-my-dsh/stent@0.1.1'

@@ -126,9 +126,9 @@ describe('ui-settings-plugins apply', () => {
     const fiber = b.ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
     expect(spy).toHaveBeenCalled()
-    expect(document.querySelectorAll(`style[data-fabric="${navScroll.NAV_SCROLL_PATCH}"]`)).toHaveLength(1)
+    expect(document.querySelectorAll(`style[data-fabric="${navScroll.NAV_SCROLL_STYLE_ID}"]`)).toHaveLength(1)
     await fiber.dispose()
-    expect(document.querySelectorAll(`style[data-fabric="${navScroll.NAV_SCROLL_PATCH}"]`)).toHaveLength(0)
+    expect(document.querySelectorAll(`style[data-fabric="${navScroll.NAV_SCROLL_STYLE_ID}"]`)).toHaveLength(0)
     spy.mockRestore()
   })
 

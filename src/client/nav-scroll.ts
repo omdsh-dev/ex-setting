@@ -1,20 +1,11 @@
 /**
- * Browser-side nav-scroll style installer for the settings dialog. The host
- * keeps an optional bundle-rewrite descriptor, while this module installs the
- * semantic rules directly so the UI remains usable when the transform cannot
- * match a closure-factory artifact. Styles are idempotent and removed with the
- * registering fiber.
+ * Browser-side nav-scroll style installer for the settings dialog. The client
+ * installs the semantic rules directly, so the UI does not depend on a host
+ * bundle transform. Styles are idempotent and removed with the registering
+ * fiber.
  */
 
-import { NAV_SCROLL_PATCH } from '../nav-scroll-contract.ts'
-
-export {
-  NAV_SCROLL_FILE,
-  NAV_SCROLL_FUNCTION,
-  NAV_SCROLL_MODULE,
-  NAV_SCROLL_PATCH,
-  NAV_SCROLL_ROUTE,
-} from '../nav-scroll-contract.ts'
+export const NAV_SCROLL_STYLE_ID = 'web-config-crawler/nav-scroll'
 
 /** The dialog navigation's semantic selector: ui-settings-general renders
  * a native <nav> inside the role=dialog panel (no role="navigation"). The
@@ -54,7 +45,7 @@ export function installNavScrollStyles(): () => void {
   if (typeof document === 'undefined') return () => {}
   if (!installed()) {
     styleElement = document.createElement('style')
-    styleElement.setAttribute('data-fabric', NAV_SCROLL_PATCH)
+    styleElement.setAttribute('data-fabric', NAV_SCROLL_STYLE_ID)
     styleElement.textContent = NAV_SCROLL_CSS
     document.head.appendChild(styleElement)
   }

@@ -6,7 +6,7 @@
 
 ## 外部零改动设计
 
-Crawler 不修改包外宿主代码：settings namespace 仍由 gateway 提供，composition 读写使用 `/dsh-config/crawler/composition`，路由只在 webserver 可用时注册。若 bundle rewrite 能匹配 `ui-settings-general` 产物，host 会提供重写后的 bundle；browser 同时安装 fiber-owned 的语义化导航样式作为 fallback。
+Crawler 不修改包外宿主代码：settings namespace 仍由 gateway 提供，composition 读写使用 `/dsh-config/crawler/composition`，路由只在 webserver 可用时注册。浏览器侧直接安装 fiber-owned 的语义化导航样式，不依赖宿主 bundle rewrite。
 
 ## 服务 API
 

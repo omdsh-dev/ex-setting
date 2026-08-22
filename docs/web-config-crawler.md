@@ -10,7 +10,8 @@ The crawler adds its behavior with **zero out-of-package host changes**:
 
 - **Host-served settings namespaces.** The DSH gateway owns the exposure decision and serves every namespace registered by the active composition. The crawler's `namespaces()` face is used by its own routes and invariant, not as a gateway patch.
 - **Composition writes own a webserver route.** The browser half reads and edits composition rows through the crawler's exact route `GET/POST /dsh-config/crawler/composition` (`src/routes.ts`) instead of a gateway RPC domain, so `apiproxy` and `connection` stay untouched. The route mounts only when the webserver capability is present; non-web compositions skip it.
-- **Served browser rewrite.** When the optional Stent compatibility service matches the `ui-settings-general` artifact, the host serves the transformed bundle through the exact `/plugins/@deepseek-ai/dsh-client-ui-settings-general/client.js` route. The browser half independently installs the same semantic navigation rules as a fiber-owned fallback.
+- **Browser-owned navigation fallback.** The browser half installs the semantic navigation rules directly as a
+  fiber-owned effect, so the settings dialog does not depend on a host bundle transform.
 
 ## Service API
 - `ctx.webConfigCrawler` (`namespaces(): SettingsNamespace[]`) — the live settings registry, in registration order, resolved at call time so namespaces that mount or dispose between requests are reflected immediately. The crawler uses this face for its own composition route and invariant.

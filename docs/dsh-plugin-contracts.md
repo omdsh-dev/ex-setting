@@ -16,7 +16,7 @@ Required Cordis services belong in `inject`. Optional services are read through 
 
 ## Scalable repository structure
 
-This bundle is a dual-face package: the host crawler half lives at `src/index.ts` (Loader metadata, service provide, and browser bundle serving), `src/routes.ts` (the crawler's own webserver composition route), `src/nav-scroll.ts` (the browser bundle rewrite contract), and `src/invariant.ts`; the browser client half lives under `src/client/`. For a larger plugin, keep those responsibilities focused and group cohesive behavior under capability-named directories such as `src/<feature>/`. Add `src/services/` only when the package owns actual Cordis services.
+This bundle is a dual-face package: the host crawler half lives at `src/index.ts` (Loader metadata and service provide), `src/routes.ts` (the crawler's own webserver composition route), and `src/invariant.ts`; the browser client half lives under `src/client/`, including its direct nav-scroll fallback. For a larger plugin, keep those responsibilities focused and group cohesive behavior under capability-named directories such as `src/<feature>/`. Add `src/services/` only when the package owns actual Cordis services.
 
 The baseline test boundary separates host tests (`tests/host/`) from client tests (`tests/client/`): loader composition and unit suites live under `tests/host/`, browser store/section/wire suites under `tests/client/`, and reusable closure-bundle seeds under `tests/client-bundles/` with the module-table harness in `tests/module-loader.ts`. Add focused specs beside the behavior they cover.
 
@@ -53,7 +53,7 @@ The package build stages browser declarations under `lib/.client-dts`, promotes 
 
 The release build produces a ready-made artifact with the same commands and
 `pnpm pack --dry-run --json`; it emits declarations and runtime JavaScript using
-only this repository's installed dependencies. The release package declares Stent as a required host peer, not a runtime or bundled dependency, so it never carries a second Stent copy. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies` for local installation and verification. The consuming profile must install `@oh-my-dsh/stent-pack` separately; the package's workspace setting is not transferred to the profile's pnpm configuration. Profile/plugin installation consumes the packed artifact and does not run an install-time `prepare` hook. Inspect the final file list and restore a development build
+only this repository's installed dependencies. The release package has no Stent peer or host bundle-rewrite dependency; the browser client owns its navigation fallback, while `cordis.patch.yml` only mounts the crawler row. This repository's `pnpm-workspace.yaml` enables `strictPeerDependencies` for local installation and verification. Profile/plugin installation consumes the packed artifact and does not run an install-time `prepare` hook. Inspect the final file list and restore a development build
 afterward when the pack lifecycle cleans or replaces generated files.
 
 A package is ready for Git or npm only when every manifest-declared runtime and type entry exists after the relevant consumer lifecycle. Publishing, pushing, tagging, and registry operations remain separately authorized actions.

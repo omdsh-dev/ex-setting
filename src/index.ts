@@ -10,9 +10,9 @@
  * registered settings namespaces but no composition editor is mounted.
  *
  * The host gateway already serves every registered settings namespace. This
- * plugin owns the live crawler and composition editor; Stent remains an
- * optional runtime capability for the browser bundle rewrite below, not a
- * patch dependency for the gateway's settings exposure.
+ * plugin owns the live crawler and composition editor; the browser half owns
+ * its navigation fallback directly, so no host compatibility service is
+ * required.
  * @module @deepseek-ai/dsh-ex-setting
  */
 
@@ -26,8 +26,6 @@ import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
 import { applyCompositionOps } from './composition-ops.ts'
 import type { CompositionConfigView, CompositionPathOp } from './composition-contract.ts'
 import { registerCompositionRoute } from './routes.ts'
-import { NAV_SCROLL_ROUTE, navScrollPatch } from './nav-scroll.ts'
-import { StentCompatService } from '@oh-my-dsh/stent-api'
 import { load as loadYaml, dump as dumpYaml } from 'js-yaml'
 // Side-effect type import: the loader augments cordis's Fiber with `entry`
 // (the composition row behind each runtime fiber).
@@ -180,8 +178,7 @@ async function readOverlay(path: string): Promise<unknown[]> {
 
 /**
  * Provide the crawler service (the settings registry, the composition
- * registry, and the overlay write path), then mount the compat facade for the
- * browser bundle rewrite.
+ * registry, and the overlay write path).
  * @param ctx - host context with the settings seam mounted.
  * @param config - resolved crawler configuration.
  */
@@ -216,22 +213,6 @@ export async function apply(ctx: Context, config?: Config): Promise<void> {
   }
   ctx.provide('webConfigCrawler', crawler)
   registerCompositionRoute(ctx, crawler)
-  await ctx.plugin(StentCompatService, {})
-  const compat = ctx.get('stentCompat')
-  /* v8 ignore next -- ctx.plugin(StentCompatService) resolves it or rejects before returning. */
-  if (compat === undefined) throw new Error('web-config-crawler: stentCompat unavailable after mounting')
-  // The optional transform serves a compatible ui-settings-general artifact;
-  // the browser half installs the same semantic rules directly so a raw
-  // fallback remains usable when the closure-factory artifact cannot match.
-  if (ctx.get('webServer') !== undefined && ctx.baseUrl !== undefined) {
-    compat.serveBundle({
-      route: NAV_SCROLL_ROUTE,
-      patch: navScrollPatch,
-      // The app must keep working if the transform cannot run: the dialog
-      // then shows the full catalog without scrolling (degraded).
-      fallback: 'raw',
-    })
-  }
 }
 
 /** Write the overlay entry list back to the personal config file. */
